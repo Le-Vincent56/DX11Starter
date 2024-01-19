@@ -24,6 +24,8 @@ private:
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
 	void LoadShaders(); 
 	void CreateGeometry();
+	void RefreshUI(const float& deltaTime);
+	void BuildUI();
 
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the
@@ -39,5 +41,10 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
 
+
+	// Inspector UI Variables
+	int currentTab = 0;
+	float bgColor[4] = { 0.4f, 0.6f, 0.75f, 1.0f };
+	bool showDemoWindow = true;
 };
 

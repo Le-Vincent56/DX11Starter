@@ -3,9 +3,15 @@
 #include "Input.h"
 #include "PathHelpers.h"
 
+// Include ImGUI
+#include "ImGui/imgui.h"
+#include "ImGui/imgui_impl_dx11.h"
+#include "ImGui/imgui_impl_win32.h"
+
 // Needed for a helper function to load pre-compiled shader files
 #pragma comment(lib, "d3dcompiler.lib")
 #include <d3dcompiler.h>
+#include <iostream>
 
 // For the DirectX Math library
 using namespace DirectX;
@@ -47,6 +53,11 @@ Game::~Game()
 
 	// Call Release() on any Direct3D objects made within this class
 	// - Note: this is unnecessary for D3D objects stored in ComPtrs
+
+	// ImGui clean up
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
 }
 
 // --------------------------------------------------------
@@ -82,6 +93,13 @@ void Game::Init()
 		context->VSSetShader(vertexShader.Get(), 0, 0);
 		context->PSSetShader(pixelShader.Get(), 0, 0);
 	}
+
+	// Initialize ImGui itself & platform/renderer backends
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGui_ImplWin32_Init(hWnd);
+	ImGui_ImplDX11_Init(device.Get(), context.Get());
+	ImGui::StyleColorsDark();
 }
 
 // --------------------------------------------------------
@@ -248,6 +266,81 @@ void Game::CreateGeometry()
 	}
 }
 
+// --------------------------------------------------------
+// Initialize ImGUI for the next frame
+// --------------------------------------------------------
+void Game::RefreshUI(const float& deltaTime)
+{
+	// Feed fresh data to ImGui
+	ImGuiIO& io = ImGui::GetIO();
+	io.DeltaTime = deltaTime;
+	io.DisplaySize.x = (float)this->windowWidth;
+	io.DisplaySize.y = (float)this->windowHeight;
+
+	// Reset the frame
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+
+	// Determine new input capture
+	Input& input = Input::GetInstance();
+	input.SetKeyboardCapture(io.WantCaptureKeyboard);
+	input.SetMouseCapture(io.WantCaptureMouse);
+
+	// Show the demo window
+	if(showDemoWindow)
+		ImGui::ShowDemoWindow();
+}
+
+// --------------------------------------------------------
+// Use ImGUI to build the UI
+// --------------------------------------------------------
+void Game::BuildUI()
+{
+	// Create a new window called "Inspector"
+	ImGui::Begin("Inspector");
+
+	// Build tabs
+	{
+		ImGui::SameLine();
+		if (ImGui::Button("General"))
+			currentTab = 0;
+
+		ImGui::SameLine();
+		if (ImGui::Button("Input"))
+			currentTab = 1;
+	}
+
+	switch (currentTab)
+	{
+	// General Tab
+	case 0:
+		// Display framerate, deltaTime and window resolution
+		ImGui::Text("Current Framerate: %f fps", ImGui::GetIO().Framerate);
+		ImGui::Text("Current DeltaTime: %f", ImGui::GetIO().DeltaTime);
+		ImGui::Text("Window Resolution: %dx%d", windowWidth, windowHeight);
+
+		// Edit the background color
+		ImGui::ColorEdit4("Background Color", &bgColor[0]);
+
+		// Toggle the demo window
+		if (ImGui::Button("Toggle ImGUI Demo Window"))
+			showDemoWindow = !showDemoWindow;
+		break;
+
+	// Input tab
+	case 1:
+		// Display mouse info
+		ImGui::Text("Current Mouse Position: (%d, %d)", Input::GetInstance().GetMouseX(), Input::GetInstance().GetMouseY());
+		ImGui::Text("Left Mouse Down: %d", Input::GetInstance().MouseLeftDown());
+		ImGui::Text("Middle Mouse Down: %d", Input::GetInstance().MouseMiddleDown());
+		ImGui::Text("Right Mouse Down: %d", Input::GetInstance().MouseRightDown());
+		break;
+	}
+
+	// End the "Inspector" window
+	ImGui::End();
+}
 
 // --------------------------------------------------------
 // Handle resizing to match the new window size.
@@ -265,6 +358,12 @@ void Game::OnResize()
 // --------------------------------------------------------
 void Game::Update(float deltaTime, float totalTime)
 {
+	// Initialize the UI for the next frame
+	RefreshUI(deltaTime);
+
+	// Build the UI
+	BuildUI();
+
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::GetInstance().KeyDown(VK_ESCAPE))
 		Quit();
@@ -280,7 +379,6 @@ void Game::Draw(float deltaTime, float totalTime)
 	// - At the beginning of Game::Draw() before drawing *anything*
 	{
 		// Clear the back buffer (erases what's on the screen)
-		const float bgColor[4] = { 0.4f, 0.6f, 0.75f, 1.0f }; // Cornflower Blue
 		context->ClearRenderTargetView(backBufferRTV.Get(), bgColor);
 
 		// Clear the depth buffer (resets per-pixel occlusion information)
@@ -312,6 +410,10 @@ void Game::Draw(float deltaTime, float totalTime)
 			0,     // Offset to the first index we want to use
 			0);    // Offset to add to each index when looking up vertices
 	}
+
+	// Render UI
+	ImGui::Render(); // Turns this frame’s UI into renderable triangles
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // Draws it to the screen
 
 	// Frame END
 	// - These should happen exactly ONCE PER FRAME

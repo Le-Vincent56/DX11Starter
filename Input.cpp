@@ -266,7 +266,6 @@ void Input::SetMouseCapture(bool captured)
 	mouseCaptured = captured;
 }
 
-
 // ----------------------------------------------------------
 //  Is the given key down this frame?
 //  
@@ -329,7 +328,6 @@ bool Input::KeyRelease(int key)
 		!keyboardCaptured;
 }
 
-
 // ----------------------------------------------------------
 //  A utility function to fill a given array of booleans 
 //  with the current state of the keyboard.  This is most
@@ -357,7 +355,6 @@ bool Input::GetKeyArray(bool* keyArray, int size)
 
 	return true;
 }
-
 
 // ----------------------------------------------------------
 //  Is the specific mouse button down this frame?
