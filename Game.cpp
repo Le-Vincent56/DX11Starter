@@ -11,7 +11,7 @@
 // Needed for a helper function to load pre-compiled shader files
 #pragma comment(lib, "d3dcompiler.lib")
 #include <d3dcompiler.h>
-#include <iostream>
+#include <math.h>
 
 // For the DirectX Math library
 using namespace DirectX;
@@ -325,7 +325,7 @@ void Game::BuildUI()
 			// Display vertices
 			for (int v = 0; v < meshes[i]->GetVertices().size(); v++)
 			{
-				ImGui::Text("\tVertex %d: (%f, %f, %f)", 
+				ImGui::Text("\tVertex %d: (%.3f, %.3f, %.3f)", 
 					v, 
 					meshes[i]->GetVertices()[v].Position.x, 
 					meshes[i]->GetVertices()[v].Position.y, 

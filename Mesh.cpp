@@ -1,5 +1,4 @@
 #include "Mesh.h"
-#include <iostream>
 
 Mesh::Mesh(
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext>	_context,
