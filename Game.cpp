@@ -186,12 +186,11 @@ void Game::CreateGeometry()
 
 	// Create the triangle mesh
 	{
-		// Establish vertices and indices
 		Vertex vertices[] =
 		{
-			{ XMFLOAT3(+0.15f, -0.25f, +0.0f), red},
-			{ XMFLOAT3(+0.4f, -0.25f, +0.0f), green},
-			{ XMFLOAT3(+0.275f, +0.25f, +0.0f), blue}
+			{ XMFLOAT3(+0.25f, -0.25f, +0.0f), red},
+			{ XMFLOAT3(-0.25f, -0.25f, +0.0f), red},
+			{ XMFLOAT3(+0.0f, +0.25f, +0.0f), blue}
 		};
 		unsigned int indices[] = { 0, 1, 2 };
 
@@ -204,10 +203,10 @@ void Game::CreateGeometry()
 		// Create vertices and indices
 		Vertex vertices[] =
 		{
-			{XMFLOAT3(+0.5f, +0.75f,+0.0f), blue},
-			{XMFLOAT3(+0.8f, +0.75f,+0.0f), blue},
-			{XMFLOAT3(+0.5f, +0.45f,+0.0f), green},
-			{XMFLOAT3(+0.8f, +0.45f,+0.0f), green},
+			{XMFLOAT3(+0.4f, +0.8f, +0.0f), blue},
+			{XMFLOAT3(+0.8f, +0.8f, +0.0f), blue},
+			{XMFLOAT3(+0.8f, +0.4f, +0.0f), green},
+			{XMFLOAT3(+0.4f, +0.4f, +0.0f), green},
 		};
 		unsigned int indices[] = { 0, 1, 2, 0, 2, 3 };
 
@@ -215,21 +214,22 @@ void Game::CreateGeometry()
 		meshes.push_back(std::make_shared<Mesh>(this->context, this->swapChain, this->device, vertices, indices, 4, 6));
 	}
 
-	// Create the pentagon mesh
+	// Create the hexagon mesh
 	{
 		// Create vertices and indices
 		Vertex vertices[] =
 		{
-			{XMFLOAT3(-0.50f, +0.5f, +0.0f), red},
-			{XMFLOAT3(-0.75f, +0.35f, +0.0f), blue},
-			{XMFLOAT3(-0.25f, +0.35f, +0.0f), blue},
-			{XMFLOAT3(-0.375f, +0.1f, +0.0f), green},
-			{XMFLOAT3(-0.625f, +0.1f, +0.0f), green},
+			{XMFLOAT3(-0.825f, +0.9f, +0.0f), blue},
+			{XMFLOAT3(-0.675f, +0.9f, +0.0f), red},
+			{XMFLOAT3(-0.6f, +0.7f, +0.0f), red},
+			{XMFLOAT3(-0.675f, +0.5f, +0.0f), green},
+			{XMFLOAT3(-0.825, +0.5f, +0.0f), green},
+			{XMFLOAT3(-0.9f, +0.7f, +0.0f), blue},
 		};
-		unsigned int indices[] = { 0, 1, 2, 1, 2, 3, 2, 3, 4 };
+		unsigned int indices[] = { 0, 1, 2, 2, 3, 4, 4, 5, 2, 2, 5, 0 };
 
 		// Create the square mesh
-		meshes.push_back(std::make_shared<Mesh>(this->context, this->swapChain, this->device, vertices, indices, 5, 9));
+		meshes.push_back(std::make_shared<Mesh>(this->context, this->swapChain, this->device, vertices, indices, 6, 12));
 	}
 }
 
@@ -321,10 +321,31 @@ void Game::BuildUI()
 
 			// Display mesh number and number of triangles
 			ImGui::Text("Mesh %d: %d vertices, %d triangles", i, meshes[i]->GetVertexCount(), triangleNum);
+
+			// Display vertices
 			for (int v = 0; v < meshes[i]->GetVertices().size(); v++)
 			{
-				ImGui::Text("\tVertex %d: (%f, %f, %f)", v, meshes[i]->GetVertices()[v].Position.x, meshes[i]->GetVertices()[v].Position.y, meshes[i]->GetVertices()[v].Position.z);
+				ImGui::Text("\tVertex %d: (%f, %f, %f)", 
+					v, 
+					meshes[i]->GetVertices()[v].Position.x, 
+					meshes[i]->GetVertices()[v].Position.y, 
+					meshes[i]->GetVertices()[v].Position.z
+				);
 			}
+
+			// Display indices
+			ImGui::Text("\tIndices (%d): {", meshes[i]->GetIndexCount());
+			for (int ind = 0; ind < meshes[i]->GetIndexCount(); ind++)
+			{
+				// Put it on the same line and display the index
+				ImGui::SameLine();
+				if (ind != meshes[i]->GetIndexCount() - 1)
+					ImGui::Text("%d,", meshes[i]->GetIndices()[ind]);
+				else
+					ImGui::Text("%d", meshes[i]->GetIndices()[ind]);
+			}
+			ImGui::SameLine();
+			ImGui::Text("}");
 		}
 		break;
 	}
