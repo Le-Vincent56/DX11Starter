@@ -71,6 +71,9 @@ void Game::Init()
 	//  - You'll be expanding and/or replacing these later
 	LoadShaders();
 	CreateGeometry();
+
+	// Initialize constant buffer
+	InitConstBuffer();
 	
 	// Set initial graphics API state
 	//  - These settings persist until we change them
@@ -172,8 +175,6 @@ void Game::LoadShaders()
 	}
 }
 
-
-
 // --------------------------------------------------------
 // Creates the geometry we're going to draw - a single triangle for now
 // --------------------------------------------------------
@@ -186,6 +187,7 @@ void Game::CreateGeometry()
 
 	// Create the triangle mesh
 	{
+		// Create vertices and indices
 		Vertex vertices[] =
 		{
 			{ XMFLOAT3(+0.25f, -0.25f, +0.0f), red},
@@ -231,6 +233,32 @@ void Game::CreateGeometry()
 		// Create the square mesh
 		meshes.push_back(std::make_shared<Mesh>(this->context, this->swapChain, this->device, vertices, indices, 6, 12));
 	}
+}
+
+void Game::InitConstBuffer()
+{
+	// Get the size of the VertexShaderStruct
+	unsigned int byteWidth = sizeof(VertexShaderData);
+	byteWidth = (byteWidth + 15) / 16 * 16;
+
+	// Create constant buffer
+	D3D11_BUFFER_DESC cbDesc = {};
+	cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	cbDesc.ByteWidth = byteWidth;
+	cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	cbDesc.Usage = D3D11_USAGE_DYNAMIC;
+	device->CreateBuffer(&cbDesc, 0, constBuffer.GetAddressOf());
+
+	// Set default shader data
+	vsData.colorTint = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
+	vsData.offset = XMFLOAT3(0.25f, 0.0f, 0.0f);
+
+	// Set constant buffers for shader data
+	context->VSSetConstantBuffers(
+		0, // Which slot (register) to bind the buffer to?
+		1, // How many are we setting right now?
+		constBuffer.GetAddressOf() // Array of buffers (or address of just one)
+	);
 }
 
 // --------------------------------------------------------
@@ -280,6 +308,10 @@ void Game::BuildUI()
 		ImGui::SameLine();
 		if (ImGui::Button("Meshes"))
 			currentTab = 2;
+
+		ImGui::SameLine();
+		if (ImGui::Button("Shader Data"))
+			currentTab = 3;
 	}
 
 	switch (currentTab)
@@ -348,10 +380,40 @@ void Game::BuildUI()
 			ImGui::Text("}");
 		}
 		break;
+
+	// Shader Data tab
+	case 3:
+		// Offset sliders
+		ImGui::SliderFloat3("Offset", &vsData.offset.x, -1.0f, 1.0f);
+
+		// Offset reset button
+		if (ImGui::Button("Reset Offset"))
+			vsData.offset = XMFLOAT3(0.0f, 0.0f, 0.0f);
+
+		ImGui::NewLine();
+
+		// Color picker
+		ImGui::ColorEdit4("Color Tint", &vsData.colorTint.x);
+
+		// Color reset button
+		if (ImGui::Button("Reset Color Tint"))
+			vsData.colorTint = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+		break;
 	}
 
 	// End the "Inspector" window
 	ImGui::End();
+}
+
+// --------------------------------------------------------
+// Update const buffer data using vsData
+// --------------------------------------------------------
+void Game::UpdateConstBuffers()
+{
+	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
+	context->Map(constBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
+	memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
+	context->Unmap(constBuffer.Get(), 0);
 }
 
 // --------------------------------------------------------
@@ -376,6 +438,9 @@ void Game::Update(float deltaTime, float totalTime)
 	// Build the UI
 	BuildUI();
 
+	// Update Buffers
+	UpdateConstBuffers();
+
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::GetInstance().KeyDown(VK_ESCAPE))
 		Quit();
@@ -397,7 +462,7 @@ void Game::Draw(float deltaTime, float totalTime)
 		context->ClearDepthStencilView(depthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
-	// DRAW geometry
+	// Draw geometry
 	{
 		for (int i = 0; i < meshes.size(); i++)
 		{
