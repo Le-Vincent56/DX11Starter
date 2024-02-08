@@ -25,8 +25,6 @@ public:
 		Vertex* meshVertices, unsigned int* meshIndices, unsigned int numVertices, unsigned int numIndices);
 	~Mesh();
 
-	
-
 	Microsoft::WRL::ComPtr<ID3D11Buffer> GetVertexBuffer();
 	Microsoft::WRL::ComPtr<ID3D11Buffer> GetIndexBuffer();
 	std::vector<Vertex> GetVertices();
