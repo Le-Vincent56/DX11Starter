@@ -1,12 +1,15 @@
 #pragma once
-
-#include "DXCore.h"
-#include "Mesh.h"
 #include <DirectXMath.h>
 #include <wrl/client.h> // Used for ComPtr - a smart pointer for COM objects
 #include <memory> // Include Memory for shared_ptr
 #include <vector>
+
+// Renderer classes
+#include "DXCore.h"
+#include "Mesh.h"
 #include "BufferStructs.h"
+#include "GameRenderer.h"
+
 
 class Game 
 	: public DXCore
@@ -28,28 +31,27 @@ private:
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
 	void LoadShaders(); 
 	void CreateGeometry();
-	void InitConstBuffer();
+	void CreateEntities();
 	void RefreshUI(const float& deltaTime);
 	void BuildUI();
-	void UpdateConstBuffers();
+	void UpdateEntities(const float& deltaTime, const float& totalTime);
 
-	// Buffers
-	Microsoft::WRL::ComPtr<ID3D11Buffer> constBuffer;
+	// Renderer
+	GameRenderer* gameRenderer;
 	
 	// Shaders and shader-related constructs
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
 
-	// Shader data
-	VertexShaderData vsData;
-
 	// Inspector UI Variables
 	int currentTab = 0;
-	float bgColor[4] = { 0.4f, 0.6f, 0.75f, 1.0f };
 	bool showDemoWindow = true;
 
 	// Meshes
 	std::vector<std::shared_ptr<Mesh>> meshes;
+
+	// Entities
+	std::vector<std::shared_ptr<GameEntity>> entities;
 };
 

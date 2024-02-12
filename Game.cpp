@@ -38,6 +38,7 @@ Game::Game(HINSTANCE hInstance)
 	CreateConsoleWindow(500, 120, 32, 120);
 	printf("Console window created successfully.  Feel free to printf() here.\n");
 #endif
+	gameRenderer = nullptr;
 }
 
 // --------------------------------------------------------
@@ -50,6 +51,7 @@ Game::~Game()
 	// Call delete or delete[] on any objects or arrays you've
 	// created using new or new[] within this class
 	// - Note: this is unnecessary if using smart pointers
+	delete gameRenderer;
 
 	// Call Release() on any Direct3D objects made within this class
 	// - Note: this is unnecessary for D3D objects stored in ComPtrs
@@ -71,9 +73,16 @@ void Game::Init()
 	//  - You'll be expanding and/or replacing these later
 	LoadShaders();
 	CreateGeometry();
+	
+	// Create Entities
+	CreateEntities();
 
-	// Initialize constant buffer
-	InitConstBuffer();
+	// Create a renderer
+	gameRenderer = new GameRenderer(this->swapChain,
+		this->device, this->context, this->backBufferRTV, this->depthBufferDSV);
+
+	// Initialize the renderer
+	gameRenderer->Init();
 	
 	// Set initial graphics API state
 	//  - These settings persist until we change them
@@ -235,30 +244,17 @@ void Game::CreateGeometry()
 	}
 }
 
-void Game::InitConstBuffer()
+// --------------------------------------------------------
+// Create the game entities
+// --------------------------------------------------------
+void Game::CreateEntities()
 {
-	// Get the size of the VertexShaderStruct
-	unsigned int byteWidth = sizeof(VertexShaderData);
-	byteWidth = (byteWidth + 15) / 16 * 16;
-
-	// Create constant buffer
-	D3D11_BUFFER_DESC cbDesc = {};
-	cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	cbDesc.ByteWidth = byteWidth;
-	cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	cbDesc.Usage = D3D11_USAGE_DYNAMIC;
-	device->CreateBuffer(&cbDesc, 0, constBuffer.GetAddressOf());
-
-	// Set default shader data
-	vsData.colorTint = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-	vsData.offset = XMFLOAT3(0.25f, 0.0f, 0.0f);
-
-	// Set constant buffers for shader data
-	context->VSSetConstantBuffers(
-		0, // Which slot (register) to bind the buffer to?
-		1, // How many are we setting right now?
-		constBuffer.GetAddressOf() // Array of buffers (or address of just one)
-	);
+	// Create entities and add them to the list
+	entities.push_back(std::make_shared<GameEntity>(meshes[0]));
+	entities.push_back(std::make_shared<GameEntity>(meshes[0]));
+	entities.push_back(std::make_shared<GameEntity>(meshes[1]));
+	entities.push_back(std::make_shared<GameEntity>(meshes[2]));
+	entities.push_back(std::make_shared<GameEntity>(meshes[2]));
 }
 
 // --------------------------------------------------------
@@ -312,7 +308,14 @@ void Game::BuildUI()
 		ImGui::SameLine();
 		if (ImGui::Button("Shader Data"))
 			currentTab = 3;
+
+		ImGui::SameLine();
+		if (ImGui::Button("Scene Entities"))
+			currentTab = 4;
 	}
+
+	// Create a small separator
+	ImGui::NewLine();
 
 	switch (currentTab)
 	{
@@ -324,7 +327,7 @@ void Game::BuildUI()
 		ImGui::Text("Window Resolution: %dx%d", windowWidth, windowHeight);
 
 		// Edit the background color
-		ImGui::ColorEdit4("Background Color", &bgColor[0]);
+		ImGui::ColorEdit4("Background Color", &gameRenderer->GetBGColor()[0]);
 
 		// Toggle the demo window
 		if (ImGui::Button("Toggle ImGUI Demo Window"))
@@ -344,60 +347,100 @@ void Game::BuildUI()
 	case 2:
 		for (int i = 0; i < meshes.size(); i++)
 		{
-			// Calculate triangles
-			int triangleNum = 1;
-			if (meshes[i]->GetIndexCount() % 3 == 0)
-			{
-				triangleNum = meshes[i]->GetIndexCount() / 3;
-			}
+			// Create the header
+			std::string header = "Mesh " + std::to_string(i);
+			const char* cHeader = header.c_str();
 
-			// Display mesh number and number of triangles
-			ImGui::Text("Mesh %d: %d vertices, %d triangles", i, meshes[i]->GetVertexCount(), triangleNum);
-
-			// Display vertices
-			for (int v = 0; v < meshes[i]->GetVertices().size(); v++)
+			// List meshes under header
+			if (ImGui::CollapsingHeader(cHeader))
 			{
-				ImGui::Text("\tVertex %d: (%.3f, %.3f, %.3f)", 
-					v, 
-					meshes[i]->GetVertices()[v].Position.x, 
-					meshes[i]->GetVertices()[v].Position.y, 
-					meshes[i]->GetVertices()[v].Position.z
-				);
-			}
+				// Calculate triangles
+				int triangleNum = 1;
+				if (meshes[i]->GetIndexCount() % 3 == 0)
+				{
+					triangleNum = meshes[i]->GetIndexCount() / 3;
+				}
 
-			// Display indices
-			ImGui::Text("\tIndices (%d): {", meshes[i]->GetIndexCount());
-			for (int ind = 0; ind < meshes[i]->GetIndexCount(); ind++)
-			{
-				// Put it on the same line and display the index
+				// Display mesh number and number of triangles
+				ImGui::Text("%d vertices, %d triangles", i, meshes[i]->GetVertexCount(), triangleNum);
+
+				// Display vertices
+				for (int v = 0; v < meshes[i]->GetVertices().size(); v++)
+				{
+					ImGui::Text("\tVertex %d: (%.3f, %.3f, %.3f)",
+						v,
+						meshes[i]->GetVertices()[v].Position.x,
+						meshes[i]->GetVertices()[v].Position.y,
+						meshes[i]->GetVertices()[v].Position.z
+					);
+				}
+
+				// Display indices
+				ImGui::Text("Indices (%d): {", meshes[i]->GetIndexCount());
+				for (int ind = 0; ind < meshes[i]->GetIndexCount(); ind++)
+				{
+					// Put it on the same line and display the index
+					ImGui::SameLine();
+					if (ind != meshes[i]->GetIndexCount() - 1)
+						ImGui::Text("%d,", meshes[i]->GetIndices()[ind]);
+					else
+						ImGui::Text("%d", meshes[i]->GetIndices()[ind]);
+				}
 				ImGui::SameLine();
-				if (ind != meshes[i]->GetIndexCount() - 1)
-					ImGui::Text("%d,", meshes[i]->GetIndices()[ind]);
-				else
-					ImGui::Text("%d", meshes[i]->GetIndices()[ind]);
+				ImGui::Text("}");
 			}
-			ImGui::SameLine();
-			ImGui::Text("}");
 		}
 		break;
 
 	// Shader Data tab
 	case 3:
-		// Offset sliders
-		ImGui::SliderFloat3("Offset", &vsData.offset.x, -1.0f, 1.0f);
+		// Get the renderer data
+		VertexShaderData vsData = gameRenderer->GetVSData();
 
-		// Offset reset button
-		if (ImGui::Button("Reset Offset"))
-			vsData.offset = XMFLOAT3(0.0f, 0.0f, 0.0f);
+		// World Matrix display
+		ImGui::Text("World Matrix");
+		ImGui::InputFloat4("", &vsData.world._11);
+		ImGui::InputFloat4("", &vsData.world._21);
+		ImGui::InputFloat4("", &vsData.world._31);
+		ImGui::InputFloat4("", &vsData.world._41);
 
 		ImGui::NewLine();
 
 		// Color picker
+		ImGui::Text("Shader Color Tint");
 		ImGui::ColorEdit4("Color Tint", &vsData.colorTint.x);
 
 		// Color reset button
 		if (ImGui::Button("Reset Color Tint"))
 			vsData.colorTint = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+
+		// Reset the data
+		gameRenderer->SetVSData(vsData);
+
+		break;
+
+	// Scene Entities tab
+	case 4:
+		for (int i = 0; i < entities.size(); ++i)
+		{
+			XMFLOAT3 position = entities[i]->GetTransform()->GetPosition();
+			XMFLOAT3 pyrRotation = entities[i]->GetTransform()->GetPitchYawRoll();
+			XMFLOAT3 scale = entities[i]->GetTransform()->GetScale();
+			unsigned int meshCount = entities[i]->GetMesh()->GetIndexCount();
+
+			// Create the header
+			std::string header = "Entity " + std::to_string(i);
+			const char* cHeader = header.c_str();
+
+			// List entities under headers
+			if (ImGui::CollapsingHeader(cHeader))
+			{
+				ImGui::DragFloat3("Position", &position.x);
+				ImGui::DragFloat3("Rotation", &pyrRotation.x);
+				ImGui::DragFloat3("Scale", &scale.x);
+				ImGui::Text("Mesh Index Count: %d", meshCount);
+			}
+		}
 		break;
 	}
 
@@ -406,14 +449,25 @@ void Game::BuildUI()
 }
 
 // --------------------------------------------------------
-// Update const buffer data using vsData
+// Update the game entities
 // --------------------------------------------------------
-void Game::UpdateConstBuffers()
+void Game::UpdateEntities(const float& deltaTime, const float& totalTime)
 {
-	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
-	context->Map(constBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
-	memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
-	context->Unmap(constBuffer.Get(), 0);
+	// Rotate all entities
+	for (int i = 0; i < entities.size(); ++i)
+	{
+		entities[i]->GetTransform()->SetRotation(0, 0, totalTime);
+	}
+
+	// Scale the first and last entity
+	float scale = (float)sin(totalTime) * 0.5f + 1.0f;
+	entities[0]->GetTransform()->SetScale(scale, scale, scale);
+	entities[4]->GetTransform()->SetScale(scale, scale, scale);
+
+	// Move the middle entities
+	entities[1]->GetTransform()->SetPosition((float)sin(totalTime), 0, 0);
+	entities[2]->GetTransform()->SetPosition((float)sin(totalTime), 0, 0);
+	entities[3]->GetTransform()->SetPosition((float)sin(totalTime), 0, 0);
 }
 
 // --------------------------------------------------------
@@ -438,8 +492,11 @@ void Game::Update(float deltaTime, float totalTime)
 	// Build the UI
 	BuildUI();
 
+	// Update entities
+	UpdateEntities(deltaTime, totalTime);
+
 	// Update Buffers
-	UpdateConstBuffers();
+	gameRenderer->Update(entities);
 
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::GetInstance().KeyDown(VK_ESCAPE))
@@ -451,42 +508,6 @@ void Game::Update(float deltaTime, float totalTime)
 // --------------------------------------------------------
 void Game::Draw(float deltaTime, float totalTime)
 {
-	// Frame START
-	// - These things should happen ONCE PER FRAME
-	// - At the beginning of Game::Draw() before drawing *anything*
-	{
-		// Clear the back buffer (erases what's on the screen)
-		context->ClearRenderTargetView(backBufferRTV.Get(), bgColor);
-
-		// Clear the depth buffer (resets per-pixel occlusion information)
-		context->ClearDepthStencilView(depthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
-	}
-
-	// Draw geometry
-	{
-		for (int i = 0; i < meshes.size(); i++)
-		{
-			meshes[i]->Draw();
-		}
-	}
-
-	// Render UI
-	ImGui::Render(); // Turns this frame’s UI into renderable triangles
-	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // Draws it to the screen
-
-	// Frame END
-	// - These should happen exactly ONCE PER FRAME
-	// - At the very end of the frame (after drawing *everything*)
-	{
-		// Present the back buffer to the user
-		//  - Puts the results of what we've drawn onto the window
-		//  - Without this, the user never sees anything
-		bool vsyncNecessary = vsync || !deviceSupportsTearing || isFullscreen;
-		swapChain->Present(
-			vsyncNecessary ? 1 : 0,
-			vsyncNecessary ? 0 : DXGI_PRESENT_ALLOW_TEARING);
-
-		// Must re-bind buffers after presenting, as they become unbound
-		context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), depthBufferDSV.Get());
-	}
+	// Use the game renderer to draw
+	gameRenderer->Draw(vsync, deviceSupportsTearing, isFullscreen);
 }
