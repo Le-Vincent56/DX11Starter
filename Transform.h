@@ -14,6 +14,12 @@ private:
 	DirectX::XMFLOAT4X4 worldMatrix;
 	DirectX::XMFLOAT4X4 worldInvTransMatrix;
 
+	// Vector variables
+	bool dirtyVectors;
+	DirectX::XMFLOAT3 rightVec;
+	DirectX::XMFLOAT3 upVec;
+	DirectX::XMFLOAT3 forwardVec;
+
 public:
 	// Constructor/Destructor
 	Transform();
@@ -33,7 +39,13 @@ public:
 	DirectX::XMFLOAT3 GetScale();
 	DirectX::XMFLOAT4X4 GetWorldMatrix();
 	DirectX::XMFLOAT4X4 GetWorldInverseTransposeMatrix();
+	DirectX::XMFLOAT3 GetRight();
+	DirectX::XMFLOAT3 GetUp();
+	DirectX::XMFLOAT3 GetForward();
 
-	// Helper Functions
+	// Update Functions
 	void UpdateMatrices();
+	void UpdateVectors();
+	void MoveRelative(float x, float y, float z);
+	void MoveRelative(DirectX::XMFLOAT3 offset);
 };

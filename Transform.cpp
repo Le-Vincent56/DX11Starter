@@ -108,6 +108,30 @@ DirectX::XMFLOAT4X4 Transform::GetWorldInverseTransposeMatrix()
 	return worldInvTransMatrix;
 }
 
+DirectX::XMFLOAT3 Transform::GetRight()
+{
+	// Update the vectors
+	UpdateVectors();
+	
+	return rightVec;
+}
+
+DirectX::XMFLOAT3 Transform::GetUp()
+{
+	// Update the vectors
+	UpdateVectors();
+
+	return upVec;
+}
+
+DirectX::XMFLOAT3 Transform::GetForward()
+{
+	// Update the vectors
+	UpdateVectors();
+
+	return forwardVec;
+}
+
 void Transform::UpdateMatrices()
 {
 	// If there are no dirty matrices, return
@@ -128,4 +152,47 @@ void Transform::UpdateMatrices()
 
 	// Clean the matrices
 	dirtyMatrices = false;
+}
+
+void Transform::UpdateVectors()
+{
+	// If there are no dirty vectors, return
+	if (!dirtyVectors)
+		return;
+
+	// Update all vectors
+	XMVECTOR rotQuat = XMQuaternionRotationRollPitchYawFromVector(XMLoadFloat3(&rotation));
+	XMStoreFloat3(&rightVec, XMVector3Rotate(XMVectorSet(1, 0, 0, 0), rotQuat));
+	XMStoreFloat3(&upVec, XMVector3Rotate(XMVectorSet(0, 1, 0, 0), rotQuat));
+	XMStoreFloat3(&forwardVec, XMVector3Rotate(XMVectorSet(0, 0, 1, 0), rotQuat));
+
+	// Clean the vectors
+	dirtyVectors = false;
+}
+
+void Transform::MoveRelative(float x, float y, float z)
+{
+	// Create the movement vector
+	XMVECTOR directionVec = XMVectorSet(x, y, z, 0);
+
+	// Represent the transform's rotation using a quaternion
+	XMVECTOR currentRotQuat = XMQuaternionRotationRollPitchYawFromVector(XMLoadFloat3(&rotation));
+
+	// Rotate to the given direction
+	XMVECTOR directedRot = XMVector3Rotate(directionVec, currentRotQuat);
+
+	// Load the existing position and add it to the new directoin
+	XMVECTOR finalPos = XMVectorAdd(XMLoadFloat3(&position), directedRot);
+
+	// Store the new position
+	XMStoreFloat3(&position, finalPos);
+	
+	// Notify dirty matrices
+	dirtyMatrices = true;
+}
+
+void Transform::MoveRelative(DirectX::XMFLOAT3 offset)
+{
+	// Call the base function using the components of the XMFLOAT3
+	MoveRelative(offset.x, offset.y, offset.z);
 }
