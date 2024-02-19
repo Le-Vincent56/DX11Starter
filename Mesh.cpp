@@ -29,7 +29,7 @@ Mesh::Mesh(
 		this->numVertices = numVertices;
 
 		// Add vertices to the vector
-		for (int i = 0; i < numVertices; i++)
+		for (unsigned int i = 0; i < numVertices; i++)
 		{
 			vertices.push_back(meshVertices[i]);
 		}
@@ -57,7 +57,7 @@ Mesh::Mesh(
 		this->numIndices = numIndices;
 
 		// Add indices to the vector
-		for (int i = 0; i < numIndices; i++)
+		for (unsigned int i = 0; i < numIndices; i++)
 		{
 			indices.push_back(meshIndices[i]);
 		}

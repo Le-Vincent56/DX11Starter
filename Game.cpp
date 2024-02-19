@@ -51,7 +51,6 @@ Game::~Game()
 	// Call delete or delete[] on any objects or arrays you've
 	// created using new or new[] within this class
 	// - Note: this is unnecessary if using smart pointers
-	delete gameRenderer;
 
 	// Call Release() on any Direct3D objects made within this class
 	// - Note: this is unnecessary for D3D objects stored in ComPtrs
@@ -76,13 +75,6 @@ void Game::Init()
 	
 	// Create Entities
 	CreateEntities();
-
-	// Create a renderer
-	gameRenderer = new GameRenderer(this->swapChain,
-		this->device, this->context, this->backBufferRTV, this->depthBufferDSV);
-
-	// Initialize the renderer
-	gameRenderer->Init();
 	
 	// Set initial graphics API state
 	//  - These settings persist until we change them
@@ -105,6 +97,25 @@ void Game::Init()
 		context->VSSetShader(vertexShader.Get(), 0, 0);
 		context->PSSetShader(pixelShader.Get(), 0, 0);
 	}
+
+	// Create a camera
+	camera = std::make_shared<Camera>(
+		0.0f, 0.0f, -5.0f,					// Position
+		5.0f,								// Movement speed
+		0.002f,								// Look speed
+		XM_PIDIV4,							// Field of view
+		(float)windowWidth / windowHeight,	// Aspect Ratio
+		0.01f,								// Near clip
+		100.0f,								// Far clip
+		ProjectionType::Perspective			// Projection type
+	);
+
+	// Create a renderer
+	gameRenderer = std::make_shared<GameRenderer>(this->swapChain,
+		this->device, this->context, this->backBufferRTV, this->depthBufferDSV);
+
+	// Initialize the renderer
+	gameRenderer->Init();
 
 	// Initialize ImGui itself & platform/renderer backends
 	IMGUI_CHECKVERSION();
@@ -234,7 +245,7 @@ void Game::CreateGeometry()
 			{XMFLOAT3(-0.675f, +0.9f, +0.0f), red},
 			{XMFLOAT3(-0.6f, +0.7f, +0.0f), red},
 			{XMFLOAT3(-0.675f, +0.5f, +0.0f), green},
-			{XMFLOAT3(-0.825, +0.5f, +0.0f), green},
+			{XMFLOAT3(-0.825f, +0.5f, +0.0f), green},
 			{XMFLOAT3(-0.9f, +0.7f, +0.0f), blue},
 		};
 		unsigned int indices[] = { 0, 1, 2, 2, 3, 4, 4, 5, 2, 2, 5, 0 };
@@ -312,6 +323,10 @@ void Game::BuildUI()
 		ImGui::SameLine();
 		if (ImGui::Button("Scene Entities"))
 			currentTab = 4;
+
+		ImGui::SameLine();
+		if (ImGui::Button("Camera"))
+			currentTab = 5;
 	}
 
 	// Create a small separator
@@ -321,126 +336,31 @@ void Game::BuildUI()
 	{
 	// General Tab
 	case 0:
-		// Display framerate, deltaTime and window resolution
-		ImGui::Text("Current Framerate: %f fps", ImGui::GetIO().Framerate);
-		ImGui::Text("Current DeltaTime: %f", ImGui::GetIO().DeltaTime);
-		ImGui::Text("Window Resolution: %dx%d", windowWidth, windowHeight);
-
-		// Edit the background color
-		ImGui::ColorEdit4("Background Color", &gameRenderer->GetBGColor()[0]);
-
-		// Toggle the demo window
-		if (ImGui::Button("Toggle ImGUI Demo Window"))
-			showDemoWindow = !showDemoWindow;
+		ConstructGeneralUI();
 		break;
 
 	// Input tab
 	case 1:
-		// Display mouse info
-		ImGui::Text("Current Mouse Position: (%d, %d)", Input::GetInstance().GetMouseX(), Input::GetInstance().GetMouseY());
-		ImGui::Text("Left Mouse Down: %d", Input::GetInstance().MouseLeftDown());
-		ImGui::Text("Middle Mouse Down: %d", Input::GetInstance().MouseMiddleDown());
-		ImGui::Text("Right Mouse Down: %d", Input::GetInstance().MouseRightDown());
+		ConstructInputUI();
 		break;
 
 	// Meshes tab
 	case 2:
-		for (int i = 0; i < meshes.size(); i++)
-		{
-			// Create the header
-			std::string header = "Mesh " + std::to_string(i);
-			const char* cHeader = header.c_str();
-
-			// List meshes under header
-			if (ImGui::CollapsingHeader(cHeader))
-			{
-				// Calculate triangles
-				int triangleNum = 1;
-				if (meshes[i]->GetIndexCount() % 3 == 0)
-				{
-					triangleNum = meshes[i]->GetIndexCount() / 3;
-				}
-
-				// Display mesh number and number of triangles
-				ImGui::Text("%d vertices, %d triangles", i, meshes[i]->GetVertexCount(), triangleNum);
-
-				// Display vertices
-				for (int v = 0; v < meshes[i]->GetVertices().size(); v++)
-				{
-					ImGui::Text("\tVertex %d: (%.3f, %.3f, %.3f)",
-						v,
-						meshes[i]->GetVertices()[v].Position.x,
-						meshes[i]->GetVertices()[v].Position.y,
-						meshes[i]->GetVertices()[v].Position.z
-					);
-				}
-
-				// Display indices
-				ImGui::Text("Indices (%d): {", meshes[i]->GetIndexCount());
-				for (int ind = 0; ind < meshes[i]->GetIndexCount(); ind++)
-				{
-					// Put it on the same line and display the index
-					ImGui::SameLine();
-					if (ind != meshes[i]->GetIndexCount() - 1)
-						ImGui::Text("%d,", meshes[i]->GetIndices()[ind]);
-					else
-						ImGui::Text("%d", meshes[i]->GetIndices()[ind]);
-				}
-				ImGui::SameLine();
-				ImGui::Text("}");
-			}
-		}
+		ConstructMeshesUI();
 		break;
 
 	// Shader Data tab
 	case 3:
-		// Get the renderer data
-		VertexShaderData vsData = gameRenderer->GetVSData();
-
-		// World Matrix display
-		ImGui::Text("World Matrix");
-		ImGui::InputFloat4("", &vsData.world._11);
-		ImGui::InputFloat4("", &vsData.world._21);
-		ImGui::InputFloat4("", &vsData.world._31);
-		ImGui::InputFloat4("", &vsData.world._41);
-
-		ImGui::NewLine();
-
-		// Color picker
-		ImGui::Text("Shader Color Tint");
-		ImGui::ColorEdit4("Color Tint", &vsData.colorTint.x);
-
-		// Color reset button
-		if (ImGui::Button("Reset Color Tint"))
-			vsData.colorTint = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-
-		// Reset the data
-		gameRenderer->SetVSData(vsData);
-
+		ConstructShadersUI();
 		break;
 
 	// Scene Entities tab
 	case 4:
-		for (int i = 0; i < entities.size(); ++i)
-		{
-			XMFLOAT3 position = entities[i]->GetTransform()->GetPosition();
-			XMFLOAT3 pyrRotation = entities[i]->GetTransform()->GetPitchYawRoll();
-			XMFLOAT3 scale = entities[i]->GetTransform()->GetScale();
-			unsigned int meshCount = entities[i]->GetMesh()->GetIndexCount();
+		ConstructEntitiesUI();
+		break;
 
-			// Create the header
-			std::string header = "Entity " + std::to_string(i);
-			const char* cHeader = header.c_str();
-
-			// List entities under headers
-			if (ImGui::CollapsingHeader(cHeader))
-			{
-				ImGui::DragFloat3("Position", &position.x);
-				ImGui::DragFloat3("Rotation", &pyrRotation.x);
-				ImGui::DragFloat3("Scale", &scale.x);
-				ImGui::Text("Mesh Index Count: %d", meshCount);
-			}
-		}
+	case 5:
+		ConstructCameraUI();
 		break;
 	}
 
@@ -479,6 +399,10 @@ void Game::OnResize()
 {
 	// Handle base-level DX resize stuff
 	DXCore::OnResize();
+
+	// Update the camera's projection to match the new aspect ratio
+	if (camera) 
+		camera->UpdateProjectionMatrix((float)windowWidth / windowHeight);
 }
 
 // --------------------------------------------------------
@@ -498,6 +422,9 @@ void Game::Update(float deltaTime, float totalTime)
 	// Update Buffers
 	gameRenderer->Update(entities);
 
+	// Update camera
+	camera->Update(deltaTime);
+
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::GetInstance().KeyDown(VK_ESCAPE))
 		Quit();
@@ -510,4 +437,197 @@ void Game::Draw(float deltaTime, float totalTime)
 {
 	// Use the game renderer to draw
 	gameRenderer->Draw(vsync, deviceSupportsTearing, isFullscreen);
+}
+
+void Game::ConstructGeneralUI()
+{
+	// Display framerate, deltaTime and window resolution
+	ImGui::Text("Current Framerate: %f fps", ImGui::GetIO().Framerate);
+	ImGui::Text("Current DeltaTime: %f", ImGui::GetIO().DeltaTime);
+	ImGui::Text("Window Resolution: %dx%d", windowWidth, windowHeight);
+
+	// Edit the background color
+	ImGui::ColorEdit4("Background Color", &gameRenderer->GetBGColor()[0]);
+
+	// Toggle the demo window
+	if (ImGui::Button("Toggle ImGUI Demo Window"))
+		showDemoWindow = !showDemoWindow;
+}
+
+// --------------------------------------------------------
+// Construct the Input ImGUI Tab
+// --------------------------------------------------------
+void Game::ConstructInputUI()
+{
+	// Display mouse info
+	ImGui::Text("Current Mouse Position: (%d, %d)", Input::GetInstance().GetMouseX(), Input::GetInstance().GetMouseY());
+	ImGui::Text("Left Mouse Down: %d", Input::GetInstance().MouseLeftDown());
+	ImGui::Text("Middle Mouse Down: %d", Input::GetInstance().MouseMiddleDown());
+	ImGui::Text("Right Mouse Down: %d", Input::GetInstance().MouseRightDown());
+}
+
+// --------------------------------------------------------
+// Construct the Meshes ImGUI Tab
+// --------------------------------------------------------
+void Game::ConstructMeshesUI()
+{
+	for (int i = 0; i < meshes.size(); i++)
+	{
+		// Create the header
+		std::string header = "Mesh " + std::to_string(i);
+		const char* cHeader = header.c_str();
+
+		// List meshes under header
+		if (ImGui::CollapsingHeader(cHeader))
+		{
+			// Calculate triangles
+			int triangleNum = 1;
+			if (meshes[i]->GetIndexCount() % 3 == 0)
+			{
+				triangleNum = meshes[i]->GetIndexCount() / 3;
+			}
+
+			// Display mesh number and number of triangles
+			ImGui::Text("%d vertices, %d triangles", i, meshes[i]->GetVertexCount(), triangleNum);
+
+			// Display vertices
+			for (int v = 0; v < meshes[i]->GetVertices().size(); v++)
+			{
+				ImGui::Text("\tVertex %d: (%.3f, %.3f, %.3f)",
+					v,
+					meshes[i]->GetVertices()[v].Position.x,
+					meshes[i]->GetVertices()[v].Position.y,
+					meshes[i]->GetVertices()[v].Position.z
+				);
+			}
+
+			// Display indices
+			ImGui::Text("Indices (%d): {", meshes[i]->GetIndexCount());
+			for (unsigned int ind = 0; ind < meshes[i]->GetIndexCount(); ind++)
+			{
+				// Put it on the same line and display the index
+				ImGui::SameLine();
+				if (ind != meshes[i]->GetIndexCount() - 1)
+					ImGui::Text("%d,", meshes[i]->GetIndices()[ind]);
+				else
+					ImGui::Text("%d", meshes[i]->GetIndices()[ind]);
+			}
+			ImGui::SameLine();
+			ImGui::Text("}");
+		}
+	}
+}
+
+// --------------------------------------------------------
+// Construct the Shaders ImGUI Tab
+// --------------------------------------------------------
+void Game::ConstructShadersUI()
+{
+	// Get the renderer data
+	VertexShaderData vsData = gameRenderer->GetVSData();
+
+	// World Matrix display
+	ImGui::Text("World Matrix");
+	ImGui::InputFloat4("", &vsData.world._11);
+	ImGui::InputFloat4("", &vsData.world._21);
+	ImGui::InputFloat4("", &vsData.world._31);
+	ImGui::InputFloat4("", &vsData.world._41);
+
+	ImGui::NewLine();
+
+	// Color picker
+	ImGui::Text("Shader Color Tint");
+	ImGui::ColorEdit4("Color Tint", &vsData.colorTint.x);
+
+	// Color reset button
+	if (ImGui::Button("Reset Color Tint"))
+		vsData.colorTint = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	// Reset the data
+	gameRenderer->SetVSData(vsData);
+}
+
+// --------------------------------------------------------
+// Construct the Entities ImGUI Tab
+// --------------------------------------------------------
+void Game::ConstructEntitiesUI()
+{
+	// Loop through the entities
+	for (int i = 0; i < entities.size(); ++i)
+	{
+		XMFLOAT3 position = entities[i]->GetTransform()->GetPosition();
+		XMFLOAT3 pyrRotation = entities[i]->GetTransform()->GetPitchYawRoll();
+		XMFLOAT3 scale = entities[i]->GetTransform()->GetScale();
+		unsigned int meshCount = entities[i]->GetMesh()->GetIndexCount();
+
+		// Create the header
+		std::string header = "Entity " + std::to_string(i);
+		const char* cHeader = header.c_str();
+
+		// List entities under headers
+		if (ImGui::CollapsingHeader(cHeader))
+		{
+			ImGui::DragFloat3("Position", &position.x);
+			ImGui::DragFloat3("Rotation", &pyrRotation.x);
+			ImGui::DragFloat3("Scale", &scale.x);
+			ImGui::Text("Mesh Index Count: %d", meshCount);
+		}
+	}
+}
+
+// --------------------------------------------------------
+// Construct the Camera ImGUI Tab
+// --------------------------------------------------------
+void Game::ConstructCameraUI()
+{
+	// Get the transform variables
+	XMFLOAT3 position = camera->GetTransform()->GetPosition();
+	XMFLOAT3 rotation = camera->GetTransform()->GetPitchYawRoll();
+
+	// Get the near and far clip planes
+	float nearClip = camera->GetNearClip();
+	float farClip = camera->GetFarClip();
+
+	// Get the projection type
+	ProjectionType projectionType = camera->GetProjectionType();
+	
+	// Allow the setting of the basic transform variables
+	if (ImGui::DragFloat3("Camera Position", &position.x, 0.01f))
+		camera->GetTransform()->SetPosition(position);
+	if (ImGui::DragFloat3("Camera Rotation (Radians, PYR)", &rotation.x, 0.01f))
+		camera->GetTransform()->SetRotation(rotation);
+
+	// Allow the setting of the near and far clip variables
+	if (ImGui::DragFloat("Near Clip Distance", &nearClip, 0.01f, 0.001f, 1.0f))
+		camera->SetNearClip(nearClip);
+	if (ImGui::DragFloat("Far Clip Distance", &farClip, 1.0f, 10.0f, 1000.0f))
+		camera->SetFarClip(farClip);
+
+	// Allow the chaging o the projection type
+	int typeIndex = (int)projectionType;
+	if (ImGui::Combo("Projection Type", &typeIndex, "Perspective\0Orthographic"))
+	{
+		projectionType = (ProjectionType)typeIndex;
+		camera->SetProjectionType(projectionType);
+	}
+
+	// Show different things depending on the projection type
+	if (projectionType == ProjectionType::Perspective)
+	{
+		// Get the field of view and convert it to degrees
+		float fieldOfView = camera->GetFieldOfView() * 180.0f / XM_PI;
+
+		// Allow the setting of the field of view
+		if (ImGui::SliderFloat("Field of View (Degrees)", &fieldOfView, 0.01f, 180.0f))
+			camera->SetFieldOfView(fieldOfView * XM_PI / 180.0f); // Need to convert back to radians
+	}
+	else
+	{
+		// Get the orthographic width
+		float orthoWidth = camera->GetOrthographicWidth();
+
+		// Allow the setting of the orthogrpahic width
+		if (ImGui::SliderFloat("Orthographic Width", &orthoWidth, 1.0f, 10.0f))
+			camera->SetOrthographicWidth(orthoWidth);
+	}
 }

@@ -134,7 +134,7 @@ void GameRenderer::Update(std::vector<std::shared_ptr<GameEntity>>& gameEntities
 // --------------------------------------------------------
 // Render the game
 // --------------------------------------------------------
-void GameRenderer::Draw(bool vsync, bool deviceSupportsTearing, BOOL isFullscreen)
+void GameRenderer::Draw(bool vsync, bool deviceSupportsTearing, BOOL isFullscreen, )
 {
 	// Frame START
 	// - These things should happen ONCE PER FRAME

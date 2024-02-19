@@ -191,10 +191,10 @@ void Camera::Update(float dt)
 
         // Set the clamp
         transform.SetRotation(currentRot);
-
-        // Update the view matrix
-        UpdateViewMatrix();
     }
+
+    // Update the view matrix
+    UpdateViewMatrix();
 }
 
 void Camera::UpdateViewMatrix()

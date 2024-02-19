@@ -9,6 +9,7 @@
 #include "Mesh.h"
 #include "BufferStructs.h"
 #include "GameRenderer.h"
+#include "Camera.h"
 
 
 class Game 
@@ -36,8 +37,19 @@ private:
 	void BuildUI();
 	void UpdateEntities(const float& deltaTime, const float& totalTime);
 
+	// UI Methods
+	void ConstructGeneralUI();
+	void ConstructInputUI();
+	void ConstructMeshesUI();
+	void ConstructShadersUI();
+	void ConstructEntitiesUI();
+	void ConstructCameraUI();
+
+	// Camera
+	std::shared_ptr<Camera> camera;
+
 	// Renderer
-	GameRenderer* gameRenderer;
+	std::shared_ptr<GameRenderer> gameRenderer;
 	
 	// Shaders and shader-related constructs
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
