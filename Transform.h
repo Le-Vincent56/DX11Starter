@@ -25,6 +25,10 @@ public:
 	Transform();
 	~Transform();
 
+	//
+	void Rotate(float pitch, float yaw, float roll);
+	void Rotate(DirectX::XMFLOAT3 pyrRotation);
+
 	// Setters
 	void SetPosition(float x, float y, float z);
 	void SetPosition(DirectX::XMFLOAT3 posiiton);

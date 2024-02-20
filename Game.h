@@ -46,7 +46,8 @@ private:
 	void ConstructCameraUI();
 
 	// Camera
-	std::shared_ptr<Camera> camera;
+	std::vector<std::shared_ptr<Camera>> cameras;
+	int activeCamera;
 
 	// Renderer
 	std::shared_ptr<GameRenderer> gameRenderer;

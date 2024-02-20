@@ -3,6 +3,7 @@
 
 #include "BufferStructs.h"
 #include "GameEntity.h"
+#include "Camera.h"
 
 class GameRenderer
 {
@@ -53,6 +54,6 @@ public:
 	void Update(std::vector<std::shared_ptr<GameEntity>>& gameEntities);
 
 	// Draw Functions
-	void Draw(bool vsync, bool deviceSupportsTearing, BOOL isFullscreen);
+	void Draw(bool vsync, bool deviceSupportsTearing, BOOL isFullscreen, std::shared_ptr<Camera> camera);
 };
 

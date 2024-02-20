@@ -99,16 +99,47 @@ void Game::Init()
 	}
 
 	// Create a camera
-	camera = std::make_shared<Camera>(
-		0.0f, 0.0f, -5.0f,					// Position
-		5.0f,								// Movement speed
-		0.002f,								// Look speed
-		XM_PIDIV4,							// Field of view
-		(float)windowWidth / windowHeight,	// Aspect Ratio
-		0.01f,								// Near clip
-		100.0f,								// Far clip
-		ProjectionType::Perspective			// Projection type
+	cameras.push_back(
+		std::make_shared<Camera>(
+			-5.0f, 2.0f, -10.0f,				// Position
+			5.0f,								// Movement speed
+			0.002f,								// Look speed
+			XM_PIDIV4,							// Field of view
+			(float)windowWidth / windowHeight,	// Aspect Ratio
+			0.01f,								// Near clip
+			100.0f,								// Far clip
+			ProjectionType::Perspective			// Projection type
+		)
 	);
+
+	cameras.push_back(
+		std::make_shared<Camera>(
+			XMFLOAT3(5.0f, 2.0f, -10.0f),		// Using alternate position constructor
+			5.0f,
+			0.002f,
+			XM_PIDIV2,
+			(float)windowWidth / windowHeight,
+			0.01f,
+			100.0f,
+			ProjectionType::Perspective
+		)
+	);
+
+	cameras.push_back(
+		std::make_shared<Camera>(
+			0.0f, 0.0f, -5.0f,
+			5.0f,
+			0.002f,
+			XM_PI,
+			(float)windowWidth / windowHeight,
+			0.01f,
+			100.0f,
+			ProjectionType::Orthographic		// Orthographic projection
+		)
+	);
+
+	// Set the default camera to the first one
+	activeCamera = 0;
 
 	// Create a renderer
 	gameRenderer = std::make_shared<GameRenderer>(this->swapChain,
@@ -400,9 +431,11 @@ void Game::OnResize()
 	// Handle base-level DX resize stuff
 	DXCore::OnResize();
 
-	// Update the camera's projection to match the new aspect ratio
-	if (camera) 
-		camera->UpdateProjectionMatrix((float)windowWidth / windowHeight);
+	// Update the all cameras' projections to match the new aspect ratio
+	for (int i = 0; i < cameras.size(); ++i)
+	{
+		cameras[i]->UpdateProjectionMatrix((float)windowWidth / windowHeight);
+	}
 }
 
 // --------------------------------------------------------
@@ -423,7 +456,7 @@ void Game::Update(float deltaTime, float totalTime)
 	gameRenderer->Update(entities);
 
 	// Update camera
-	camera->Update(deltaTime);
+	cameras[activeCamera]->Update(deltaTime);
 
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::GetInstance().KeyDown(VK_ESCAPE))
@@ -436,7 +469,7 @@ void Game::Update(float deltaTime, float totalTime)
 void Game::Draw(float deltaTime, float totalTime)
 {
 	// Use the game renderer to draw
-	gameRenderer->Draw(vsync, deviceSupportsTearing, isFullscreen);
+	gameRenderer->Draw(vsync, deviceSupportsTearing, isFullscreen, cameras[activeCamera]);
 }
 
 void Game::ConstructGeneralUI()
@@ -580,54 +613,75 @@ void Game::ConstructEntitiesUI()
 // --------------------------------------------------------
 void Game::ConstructCameraUI()
 {
+	// Add buttons for every camera within the cameras vector
+	ImGui::Text("Select Camera");
+	for (int i = 0; i < cameras.size(); ++i)
+	{
+		// Put all the buttons on the same line
+		if (i != 0)
+			ImGui::SameLine();
+
+		// Create the button label
+		std::string label = "Camera " + std::to_string(i + 1);
+		const char* cLabel = label.c_str();
+
+		// Depending on the button pressed, set the active camera
+		if (ImGui::Button(cLabel))
+			activeCamera = i;
+	}
+
+	// Add some spacing
+	ImGui::NewLine();
+	ImGui::Text("Current Camera Variables");
+
 	// Get the transform variables
-	XMFLOAT3 position = camera->GetTransform()->GetPosition();
-	XMFLOAT3 rotation = camera->GetTransform()->GetPitchYawRoll();
+	XMFLOAT3 position = cameras[activeCamera]->GetTransform()->GetPosition();
+	XMFLOAT3 rotation = cameras[activeCamera]->GetTransform()->GetPitchYawRoll();
 
 	// Get the near and far clip planes
-	float nearClip = camera->GetNearClip();
-	float farClip = camera->GetFarClip();
+	float nearClip = cameras[activeCamera]->GetNearClip();
+	float farClip = cameras[activeCamera]->GetFarClip();
 
 	// Get the projection type
-	ProjectionType projectionType = camera->GetProjectionType();
+	ProjectionType projectionType = cameras[activeCamera]->GetProjectionType();
 	
 	// Allow the setting of the basic transform variables
 	if (ImGui::DragFloat3("Camera Position", &position.x, 0.01f))
-		camera->GetTransform()->SetPosition(position);
+		cameras[activeCamera]->GetTransform()->SetPosition(position);
 	if (ImGui::DragFloat3("Camera Rotation (Radians, PYR)", &rotation.x, 0.01f))
-		camera->GetTransform()->SetRotation(rotation);
+		cameras[activeCamera]->GetTransform()->SetRotation(rotation);
 
 	// Allow the setting of the near and far clip variables
-	if (ImGui::DragFloat("Near Clip Distance", &nearClip, 0.01f, 0.001f, 1.0f))
-		camera->SetNearClip(nearClip);
-	if (ImGui::DragFloat("Far Clip Distance", &farClip, 1.0f, 10.0f, 1000.0f))
-		camera->SetFarClip(farClip);
+	if (ImGui::SliderFloat("Near Clip Distance", &nearClip, 0.001, 1.0f))
+		cameras[activeCamera]->SetNearClip(nearClip);
+	if (ImGui::SliderFloat("Far Clip Distance", &farClip, 10.0f, 1000.0f))
+		cameras[activeCamera]->SetFarClip(farClip);
 
 	// Allow the chaging o the projection type
 	int typeIndex = (int)projectionType;
 	if (ImGui::Combo("Projection Type", &typeIndex, "Perspective\0Orthographic"))
 	{
 		projectionType = (ProjectionType)typeIndex;
-		camera->SetProjectionType(projectionType);
+		cameras[activeCamera]->SetProjectionType(projectionType);
 	}
 
 	// Show different things depending on the projection type
 	if (projectionType == ProjectionType::Perspective)
 	{
 		// Get the field of view and convert it to degrees
-		float fieldOfView = camera->GetFieldOfView() * 180.0f / XM_PI;
+		float fieldOfView = cameras[activeCamera]->GetFieldOfView() * 180.0f / XM_PI;
 
 		// Allow the setting of the field of view
 		if (ImGui::SliderFloat("Field of View (Degrees)", &fieldOfView, 0.01f, 180.0f))
-			camera->SetFieldOfView(fieldOfView * XM_PI / 180.0f); // Need to convert back to radians
+			cameras[activeCamera]->SetFieldOfView(fieldOfView * XM_PI / 180.0f); // Need to convert back to radians
 	}
 	else
 	{
 		// Get the orthographic width
-		float orthoWidth = camera->GetOrthographicWidth();
+		float orthoWidth = cameras[activeCamera]->GetOrthographicWidth();
 
 		// Allow the setting of the orthogrpahic width
 		if (ImGui::SliderFloat("Orthographic Width", &orthoWidth, 1.0f, 10.0f))
-			camera->SetOrthographicWidth(orthoWidth);
+			cameras[activeCamera]->SetOrthographicWidth(orthoWidth);
 	}
 }

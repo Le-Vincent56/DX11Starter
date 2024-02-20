@@ -17,6 +17,30 @@ Transform::~Transform()
 {
 }
 
+void Transform::Rotate(float pitch, float yaw, float roll)
+{
+	// Add the rotation components to the current rotation
+	rotation.x += pitch;
+	rotation.y += yaw;
+	rotation.z += roll;
+
+	// Notify dirty matrices and vectors
+	dirtyMatrices = true;
+	dirtyVectors = true;
+}
+
+void Transform::Rotate(DirectX::XMFLOAT3 pyrRotation)
+{
+	// Add the rotation components to the current rotation
+	this->rotation.x += pyrRotation.x;
+	this->rotation.y += pyrRotation.y;
+	this->rotation.z += pyrRotation.z;
+
+	// Notify dirty matrices and vectors
+	dirtyMatrices = true;
+	dirtyVectors = true;
+}
+
 void Transform::SetPosition(float x, float y, float z)
 {
 	// Set the position
@@ -28,7 +52,7 @@ void Transform::SetPosition(float x, float y, float z)
 	dirtyMatrices = true;
 }
 
-void Transform::SetPosition(DirectX::XMFLOAT3 posiiton)
+void Transform::SetPosition(DirectX::XMFLOAT3 position)
 {
 	// Set the position
 	this->position = position;
@@ -44,8 +68,9 @@ void Transform::SetRotation(float pitch, float yaw, float roll)
 	rotation.y = yaw;
 	rotation.z = roll;
 
-	// Notify dirty matrices
+	// Notify dirty matrices and vectors
 	dirtyMatrices = true;
+	dirtyVectors = true;
 }
 
 void Transform::SetRotation(DirectX::XMFLOAT3 rotation)
@@ -53,8 +78,9 @@ void Transform::SetRotation(DirectX::XMFLOAT3 rotation)
 	// Set the rotation
 	this->rotation = rotation;
 
-	// Notify dirty matrices
+	// Notify dirty matrices and vectors
 	dirtyMatrices = true;
+	dirtyVectors = true;
 }
 
 void Transform::SetScale(float x, float y, float z)

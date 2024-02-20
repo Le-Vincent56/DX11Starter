@@ -1,15 +1,16 @@
 #include "Camera.h"
+#include <iostream>
 
 using namespace DirectX;
 
 Camera::Camera(
-    DirectX::XMFLOAT3 position, 
-    float movementSpeed, 
-    float mouseLookSpeed, 
-    float fieldOfView, 
-    float aspectRatio, 
-    float nearClip, 
-    float farClip, 
+    DirectX::XMFLOAT3 position,
+    float movementSpeed,
+    float mouseLookSpeed,
+    float fieldOfView,
+    float aspectRatio,
+    float nearClip,
+    float farClip,
     ProjectionType projectionType)
     :
     movementSpeed(movementSpeed),
@@ -18,7 +19,8 @@ Camera::Camera(
     aspectRatio(aspectRatio),
     nearClip(nearClip),
     farClip(farClip),
-    projectionType(projectionType)
+    projectionType(projectionType),
+    orthographicWidth(2.0f)
 {
     // Set the transform position
     transform.SetPosition(position);
@@ -39,6 +41,15 @@ Camera::Camera(
     float nearClip, 
     float farClip, 
     ProjectionType projectionType)
+    :
+    movementSpeed(movementSpeed),
+    mouseLookSpeed(mouseLookSpeed),
+    fieldOfView(fieldOfView),
+    aspectRatio(aspectRatio),
+    nearClip(nearClip),
+    farClip(farClip),
+    projectionType(projectionType),
+    orthographicWidth(2.0f)
 {
     // Set the transform position
     transform.SetPosition(x, y, z);
@@ -176,7 +187,7 @@ void Camera::Update(float dt)
         float yDiff = mouseLookSpeed * input.GetMouseYDelta();
 
         // Rotate in the opposite order
-        transform.SetRotation(yDiff, xDiff, 0);
+        transform.Rotate(yDiff, xDiff, 0);
 
         // Clamp the X rotation to prevent camera flipping
         XMFLOAT3 currentRot = transform.GetPitchYawRoll();
@@ -222,33 +233,23 @@ void Camera::UpdateProjectionMatrix(float aspectRatio)
     // Establish a projection matrix
     XMMATRIX projectionMatrix;
 
-    // Determine which type of projection to use
-    switch (projectionType)
+    // Set projection matrix using Perspective Projection
+    if (projectionType == ProjectionType::Perspective)
     {
-    case ProjectionType::Perspective: // Perspective Camera
         projectionMatrix = XMMatrixPerspectiveFovLH(
             fieldOfView,    // Field of view angle
             aspectRatio,    // Aspect ratio
             nearClip,       // Near clip plane distance
             farClip         // Far clip plane distance
         );
-        break;
-
-    case ProjectionType::Orthographic: // Orthographic Camera
+    }
+    else // Set projection matrix using Orthographic Projection
+    {
         projectionMatrix = XMMatrixOrthographicLH(
             orthographicWidth,                  // Projection width
             orthographicWidth / aspectRatio,    // Project height
             nearClip,                           // Near clip plane distance
             farClip                             // Far clip plane distance
-        );
-        break;
-
-    default: // Default to perspective view
-        projectionMatrix = XMMatrixPerspectiveFovLH(
-            fieldOfView,    // Field of view angle
-            aspectRatio,    // Aspect ratio
-            nearClip,       // Near clip plane distance
-            farClip         // Far clip plane distance
         );
     }
 

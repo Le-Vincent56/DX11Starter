@@ -89,6 +89,18 @@ void GameRenderer::InitConstantBuffer()
 		0.0f, 0.0f, 0.0f, 0.0f,
 		0.0f, 0.0f, 0.0f, 0.0f
 	);
+	vsData.view = XMFLOAT4X4(
+		0.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 0.0f
+	);
+	vsData.projection = XMFLOAT4X4(
+		0.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 0.0f
+	);
 
 	// Set constant buffers for shader data
 	context->VSSetConstantBuffers(
@@ -134,7 +146,7 @@ void GameRenderer::Update(std::vector<std::shared_ptr<GameEntity>>& gameEntities
 // --------------------------------------------------------
 // Render the game
 // --------------------------------------------------------
-void GameRenderer::Draw(bool vsync, bool deviceSupportsTearing, BOOL isFullscreen, )
+void GameRenderer::Draw(bool vsync, bool deviceSupportsTearing, BOOL isFullscreen, std::shared_ptr<Camera> camera)
 {
 	// Frame START
 	// - These things should happen ONCE PER FRAME
@@ -152,6 +164,8 @@ void GameRenderer::Draw(bool vsync, bool deviceSupportsTearing, BOOL isFullscree
 	{
 		// Update shader info for each entity
 		vsData.world = renderEntities[i]->GetTransform()->GetWorldMatrix();
+		vsData.view = camera->GetView();
+		vsData.projection = camera->GetProjection();
 
 		// Update constant buffers
 		UpdateConstBuffers();
