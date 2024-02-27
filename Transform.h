@@ -52,4 +52,6 @@ public:
 	void UpdateVectors();
 	void MoveRelative(float x, float y, float z);
 	void MoveRelative(DirectX::XMFLOAT3 offset);
+	void MoveAbsolute(float x, float y, float z);
+	void MoveAbsolute(DirectX::XMFLOAT3 offset);
 };

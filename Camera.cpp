@@ -162,63 +162,19 @@ ProjectionType Camera::GetProjectionType()
 
 void Camera::Update(float dt)
 {
-    // Get the current speed - allows the speed to be transformed and be
-    // independent of frame rate
-    float currentSpeed = movementSpeed * dt;
-
-    // Check for user input
-    Input& input = Input::GetInstance();
-
-    // Speed up or down as necessary
-    if (input.KeyDown(VK_SHIFT)) { currentSpeed *= 5; } // Speed up by 5x
-    if (input.KeyDown(VK_CONTROL)) { currentSpeed *= 0.1f; } // Slow down by 0.1x
-
-    // Get movement from input
-    if (input.KeyDown('W')) { transform.MoveRelative(0, 0, currentSpeed); } // Move forward
-    if (input.KeyDown('S')) { transform.MoveRelative(0, 0, -currentSpeed); } // Move backward
-    if (input.KeyDown('A')) { transform.MoveRelative(-currentSpeed, 0, 0); } // Move left
-    if (input.KeyDown('D')) { transform.MoveRelative(currentSpeed, 0, 0); } // Move right
-
-    // Check if the left mouse button is being held down
-    if (input.MouseLeftDown())
-    {
-        // Determine how far the mouse has moved since last frame
-        float xDiff = mouseLookSpeed * input.GetMouseXDelta();
-        float yDiff = mouseLookSpeed * input.GetMouseYDelta();
-
-        // Rotate in the opposite order
-        transform.Rotate(yDiff, xDiff, 0);
-
-        // Clamp the X rotation to prevent camera flipping
-        XMFLOAT3 currentRot = transform.GetPitchYawRoll();
-
-        // Clamp the upper bound
-        if (currentRot.x > XM_PIDIV2)
-            currentRot.x = XM_PIDIV2;
-
-        // Clamp the lower bound
-        if (currentRot.x < -XM_PIDIV2)
-            currentRot.x = -XM_PIDIV2;
-
-        // Set the clamp
-        transform.SetRotation(currentRot);
-    }
-
     // Update the view matrix
     UpdateViewMatrix();
 }
 
 void Camera::UpdateViewMatrix()
 {
-    // Get the camera's forward and position vectors
-    XMFLOAT3 forward = transform.GetForward();
-    XMFLOAT3 position = transform.GetPosition();
+    XMVECTOR worldUp = XMVectorSet(0, 1, 0, 0);
 
     // Create the view matrix
     XMMATRIX view = XMMatrixLookToLH(
-        XMLoadFloat3(&position),
-        XMLoadFloat3(&forward),
-        XMVectorSet(0, 1, 0, 0)
+        XMLoadFloat3(&transform.GetPosition()),
+        XMLoadFloat3(&transform.GetForward()),
+        worldUp
     );
 
     // Set the view matrix

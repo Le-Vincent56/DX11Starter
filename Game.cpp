@@ -605,6 +605,11 @@ void Game::ConstructEntitiesUI()
 			ImGui::DragFloat3("Scale", &scale.x);
 			ImGui::Text("Mesh Index Count: %d", meshCount);
 		}
+
+		// Set transform
+		entities[i]->GetTransform()->SetPosition(position);
+		entities[i]->GetTransform()->SetRotation(pyrRotation);
+		entities[i]->GetTransform()->SetScale(scale);
 	}
 }
 

@@ -222,3 +222,18 @@ void Transform::MoveRelative(DirectX::XMFLOAT3 offset)
 	// Call the base function using the components of the XMFLOAT3
 	MoveRelative(offset.x, offset.y, offset.z);
 }
+
+void Transform::MoveAbsolute(float x, float y, float z)
+{
+	position.x += x;
+	position.y += y;
+	position.z += z;
+
+	dirtyMatrices = true;
+}
+
+void Transform::MoveAbsolute(DirectX::XMFLOAT3 offset)
+{
+	// Call the base function using the components of the XMFLOAT3
+	MoveAbsolute(offset.x, offset.y, offset.z);
+}
