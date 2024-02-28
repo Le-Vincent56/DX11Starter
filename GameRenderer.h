@@ -1,7 +1,6 @@
 #pragma once
 #include <vector>
 
-#include "BufferStructs.h"
 #include "GameEntity.h"
 #include "Camera.h"
 
@@ -19,13 +18,19 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> constBuffer;
 
 	// Shaders
-	VertexShaderData vsData;
+	std::shared_ptr<SimplePixelShader> pixelShader;
+	std::shared_ptr<SimpleVertexShader> vertexShader;
 
 	// Entities
 	std::vector<std::shared_ptr<GameEntity>> renderEntities;
 
 	// Variables
 	float bgColor[4] = { 0.4f, 0.6f, 0.75f, 1.0f };
+	float totalTime = 0;
+
+	// Sort materials
+	static bool CompareEntityMaterials(const std::shared_ptr<GameEntity>& entity1, const std::shared_ptr<GameEntity>& entity2);
+	void SortByMaterial(std::vector<std::shared_ptr<GameEntity>>& entities);
 
 public:
 	GameRenderer(
@@ -39,21 +44,20 @@ public:
 
 	// Getters
 	float* GetBGColor();
-	VertexShaderData GetVSData();
-	
-	// Setters
-	void SetVSData(VertexShaderData vsData);
+	std::shared_ptr<SimplePixelShader> GetPixelShader();
+	std::shared_ptr<SimpleVertexShader> GetVertexShader();
+	std::vector<std::shared_ptr<GameEntity>> GetRenderedEntities();
 
 	// Initialize Functions
 	void Init();
-	void InitConstantBuffer();
+	void LoadShaders();
 
 	// Update Functions
 	void SelectRenderableEntities(std::vector<std::shared_ptr<GameEntity>>& gameEntities);
-	void UpdateConstBuffers();
-	void Update(std::vector<std::shared_ptr<GameEntity>>& gameEntities);
+	void Update(float& totalTime, std::vector<std::shared_ptr<GameEntity>>& gameEntities);
 
 	// Draw Functions
-	void Draw(bool vsync, bool deviceSupportsTearing, BOOL isFullscreen, std::shared_ptr<Camera> camera);
+	void Draw(bool vsync, bool deviceSupportsTearing, BOOL isFullscreen, 
+		std::shared_ptr<Camera> camera);
 };
 

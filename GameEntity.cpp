@@ -5,18 +5,27 @@ using namespace DirectX;
 
 std::shared_ptr<Mesh> GameEntity::GetMesh()
 {
-	return mesh;
+	return this->mesh;
+}
+
+std::shared_ptr<Material> GameEntity::GetMaterial()
+{
+	return this->material;
 }
 
 Transform* GameEntity::GetTransform()
 {
-	return &transform;
+	return &this->transform;
 }
 
-GameEntity::GameEntity(std::shared_ptr<Mesh> mesh)
+GameEntity::GameEntity(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material)
+	: mesh(mesh), material(material)
 {
-	// Initialize variables
-	this->mesh = mesh;
+}
+
+void GameEntity::SetMaterial(std::shared_ptr<Material> material)
+{
+	this->material = material;
 }
 
 void GameEntity::Draw()

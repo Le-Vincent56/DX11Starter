@@ -7,10 +7,11 @@
 // Renderer classes
 #include "DXCore.h"
 #include "Mesh.h"
-#include "BufferStructs.h"
 #include "GameRenderer.h"
 #include "Camera.h"
 #include "UserInput.h"
+#include "SimpleShader.h"
+#include "Material.h"
 
 
 class Game 
@@ -31,8 +32,8 @@ public:
 private:
 
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
-	void LoadShaders(); 
 	void CreateGeometry();
+	void CreateMaterials();
 	void CreateEntities();
 	void RefreshUI(const float& deltaTime);
 	void BuildUI();
@@ -52,15 +53,13 @@ private:
 
 	// Renderer
 	std::shared_ptr<GameRenderer> gameRenderer;
-	
-	// Shaders and shader-related constructs
-	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
-	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
-	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
 
 	// Inspector UI Variables
 	int currentTab = 0;
 	bool showDemoWindow = true;
+
+	// Materials
+	std::vector<std::shared_ptr<Material>> materials;
 
 	// Meshes
 	std::vector<std::shared_ptr<Mesh>> meshes;

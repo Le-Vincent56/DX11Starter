@@ -1,9 +1,13 @@
 #include "GameRenderer.h"
+#include <algorithm>
+
+#include "PathHelpers.h"
 
 // Include ImGUI
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_impl_win32.h"
+#include <iostream>
 
 using namespace DirectX;
 
@@ -20,8 +24,6 @@ GameRenderer::GameRenderer(
 	swapChain(_swapChain), device(_device), context(_context), backBufferRTV(_backBufferRTV),
 	depthBufferDSV(_depthBufferDSV)
 {
-	// Zero out shader data
-	vsData = {};
 }
 
 // --------------------------------------------------------
@@ -36,23 +38,22 @@ GameRenderer::~GameRenderer()
 // --------------------------------------------------------
 float* GameRenderer::GetBGColor()
 {
-	return bgColor;
+	return this->bgColor;
 }
 
-// --------------------------------------------------------
-// Get the current VertexShader data
-// --------------------------------------------------------
-VertexShaderData GameRenderer::GetVSData()
+std::shared_ptr<SimplePixelShader> GameRenderer::GetPixelShader()
 {
-	return vsData;
+	return this->pixelShader;
 }
 
-// --------------------------------------------------------
-// Set VertexShader data
-// --------------------------------------------------------
-void GameRenderer::SetVSData(VertexShaderData vsData)
+std::shared_ptr<SimpleVertexShader> GameRenderer::GetVertexShader()
 {
-	this->vsData = vsData;
+	return this->vertexShader;
+}
+
+std::vector<std::shared_ptr<GameEntity>> GameRenderer::GetRenderedEntities()
+{
+	return this->renderEntities;
 }
 
 // --------------------------------------------------------
@@ -60,54 +61,49 @@ void GameRenderer::SetVSData(VertexShaderData vsData)
 // --------------------------------------------------------
 void GameRenderer::Init()
 {
-	// Initialize the constant buffer
-	InitConstantBuffer();
+	// Load shaders
+	LoadShaders();
 }
 
 // --------------------------------------------------------
-// Initialize constant buffers
+// Loads shaders from compiled shader object (.cso) files
+// and also created the Input Layout that describes our 
+// vertex data to the rendering pipeline. 
+// - Input Layout creation is done here because it must 
+//    be verified against vertex shader byte code
+// - We'll have that byte code already loaded below
 // --------------------------------------------------------
-void GameRenderer::InitConstantBuffer()
+void GameRenderer::LoadShaders()
 {
-	// Get the size of the VertexShaderStruct
-	unsigned int byteWidth = sizeof(VertexShaderData);
-	byteWidth = (byteWidth + 15) / 16 * 16;
+	// Use Simple Shader to create a pixel and vertex shader
+	pixelShader = std::make_shared<SimplePixelShader>(
+		device,
+		context,
+		FixPath(L"CustomPS.cso").c_str()
+	);
+	vertexShader = std::make_shared<SimpleVertexShader>(
+		device,
+		context,
+		FixPath(L"VertexShader.cso").c_str()
+	);
+}
 
-	// Create constant buffer
-	D3D11_BUFFER_DESC cbDesc = {};
-	cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	cbDesc.ByteWidth = byteWidth;
-	cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	cbDesc.Usage = D3D11_USAGE_DYNAMIC;
-	device->CreateBuffer(&cbDesc, 0, constBuffer.GetAddressOf());
+// --------------------------------------------------------
+// Compare the materials of two entities
+// --------------------------------------------------------
+bool GameRenderer::CompareEntityMaterials(const std::shared_ptr<GameEntity>& entity1, const std::shared_ptr<GameEntity>& entity2)
+{
+	// Compare pointer addresses
+	return entity1->GetMaterial().get() < entity2->GetMaterial().get();
+}
 
-	// Set default shader data
-	vsData.colorTint = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-	vsData.world = XMFLOAT4X4(
-		0.0f, 0.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 0.0f, 0.0f
-	);
-	vsData.view = XMFLOAT4X4(
-		0.0f, 0.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 0.0f, 0.0f
-	);
-	vsData.projection = XMFLOAT4X4(
-		0.0f, 0.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 0.0f, 0.0f
-	);
-
-	// Set constant buffers for shader data
-	context->VSSetConstantBuffers(
-		0, // Which slot (register) to bind the buffer to?
-		1, // How many are we setting right now?
-		constBuffer.GetAddressOf() // Array of buffers (or address of just one)
-	);
+// --------------------------------------------------------
+// Sort a list of entities by their material
+// --------------------------------------------------------
+void GameRenderer::SortByMaterial(std::vector<std::shared_ptr<GameEntity>>& entities)
+{
+	// Sort the entities using the materials as a lambda function
+	std::sort(entities.begin(), entities.end(), CompareEntityMaterials);
 }
 
 // --------------------------------------------------------
@@ -121,32 +117,25 @@ void GameRenderer::SelectRenderableEntities(std::vector<std::shared_ptr<GameEnti
 }
 
 // --------------------------------------------------------
-// Update the constant buffers
-// --------------------------------------------------------
-void GameRenderer::UpdateConstBuffers()
-{
-	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
-	context->Map(constBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
-	memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
-	context->Unmap(constBuffer.Get(), 0);
-}
-
-// --------------------------------------------------------
 // Update the Renderer
 // --------------------------------------------------------
-void GameRenderer::Update(std::vector<std::shared_ptr<GameEntity>>& gameEntities)
+void GameRenderer::Update(float& totalTime, std::vector<std::shared_ptr<GameEntity>>& gameEntities)
 {
-	// Update the constant buffers
-	UpdateConstBuffers();
+	// Update total time
+	this->totalTime = totalTime;
 
-	// Update Entities
+	// Update which entities to render
 	SelectRenderableEntities(gameEntities);
+
+	// Sort renderable entities by their material
+	SortByMaterial(renderEntities);
 }
 
 // --------------------------------------------------------
 // Render the game
 // --------------------------------------------------------
-void GameRenderer::Draw(bool vsync, bool deviceSupportsTearing, BOOL isFullscreen, std::shared_ptr<Camera> camera)
+void GameRenderer::Draw(bool vsync, bool deviceSupportsTearing, BOOL isFullscreen, 
+	std::shared_ptr<Camera> camera)
 {
 	// Frame START
 	// - These things should happen ONCE PER FRAME
@@ -162,13 +151,24 @@ void GameRenderer::Draw(bool vsync, bool deviceSupportsTearing, BOOL isFullscree
 	// Draw entities
 	for (int i = 0; i < renderEntities.size(); ++i)
 	{
-		// Update shader info for each entity
-		vsData.world = renderEntities[i]->GetTransform()->GetWorldMatrix();
-		vsData.view = camera->GetView();
-		vsData.projection = camera->GetProjection();
+		// Update pixel shader info for each entity
+		std::shared_ptr<SimplePixelShader> ps = renderEntities[i]->GetMaterial()->GetPixelShader();
+		ps->SetFloat4("colorTint", renderEntities[i]->GetMaterial()->GetColorTint());
+		ps->SetFloat("time", totalTime * 5.0f);
+
+		// Update vertex shader info for each entity
+		std::shared_ptr<SimpleVertexShader> vs = renderEntities[i]->GetMaterial()->GetVertexShader();
+		vs->SetMatrix4x4("world", renderEntities[i]->GetTransform()->GetWorldMatrix());
+		vs->SetMatrix4x4("view", camera->GetView());
+		vs->SetMatrix4x4("projection", camera->GetProjection());
 
 		// Update constant buffers
-		UpdateConstBuffers();
+		ps->CopyAllBufferData();
+		vs->CopyAllBufferData();
+
+		// Set entity shaders
+		renderEntities[i]->GetMaterial()->GetVertexShader()->SetShader();
+		renderEntities[i]->GetMaterial()->GetPixelShader()->SetShader();
 
 		// Render the entity
 		renderEntities[i]->Draw();
