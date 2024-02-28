@@ -38,9 +38,9 @@ public:
 	void SetScale(DirectX::XMFLOAT3 scale);
 
 	// Getters
-	DirectX::XMFLOAT3 GetPosition();
-	DirectX::XMFLOAT3 GetPitchYawRoll();
-	DirectX::XMFLOAT3 GetScale();
+	DirectX::XMFLOAT3 GetPosition() const;
+	DirectX::XMFLOAT3 GetPitchYawRoll() const;
+	DirectX::XMFLOAT3 GetScale() const;
 	DirectX::XMFLOAT4X4 GetWorldMatrix();
 	DirectX::XMFLOAT4X4 GetWorldInverseTransposeMatrix();
 	DirectX::XMFLOAT3 GetRight();

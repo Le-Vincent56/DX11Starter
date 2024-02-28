@@ -13,20 +13,19 @@ enum class ControlType
 class UserInput
 {
 public:
-	UserInput();
+	UserInput(Transform& currentTarget, ControlType type);
 	~UserInput();
-	void SetTarget(Transform* currentTarget, ControlType type);
+	void SetTarget(Transform& currentTarget, ControlType type);
 	void SetMovementSpeed(float movementSpeed);
 	void SetLookSpeed(float lookSpeed);
+	void Update(const float& deltaTime);
 
 private:
-	Transform* currentTarget;
+	Transform& currentTarget;
 	ControlType type;
-	Camera* camera;
 	float movementSpeed;
 	float lookSpeed;
 
-	void Update(float& dt);
 	void UpdateCameraInput(Input& input, float currentSpeed);
 };
 

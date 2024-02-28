@@ -6,7 +6,11 @@ Transform::Transform() :
 	position(0.0f, 0.0f, 0.0f),
 	rotation(0.0f, 0.0f, 0.0f),
 	scale(1.0f, 1.0f, 1.0f),
-	dirtyMatrices(false)
+	rightVec(1.0f, 0.0f, 0.0f),
+	upVec(0.0f, 1.0f, 0.0f),
+	forwardVec(0.0f, 0.0f, 1.0f),
+	dirtyMatrices(false),
+	dirtyVectors(false)
 {
 	// Initialize matrices
 	XMStoreFloat4x4(&worldMatrix, XMMatrixIdentity());
@@ -103,17 +107,17 @@ void Transform::SetScale(DirectX::XMFLOAT3 scale)
 	dirtyMatrices = true;
 }
 
-DirectX::XMFLOAT3 Transform::GetPosition()
+DirectX::XMFLOAT3 Transform::GetPosition() const
 {
 	return position;
 }
 
-DirectX::XMFLOAT3 Transform::GetPitchYawRoll()
+DirectX::XMFLOAT3 Transform::GetPitchYawRoll() const
 {
 	return rotation;
 }
 
-DirectX::XMFLOAT3 Transform::GetScale()
+DirectX::XMFLOAT3 Transform::GetScale() const
 {
 	return scale;
 }

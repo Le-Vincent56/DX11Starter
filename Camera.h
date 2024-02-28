@@ -12,7 +12,7 @@ enum class ProjectionType
 class Camera
 {
 private:
-	Transform transform;
+	Transform* transform;
 
 	// Camera matrices
 	DirectX::XMFLOAT4X4 viewMatrix;
@@ -68,19 +68,19 @@ public:
 
 	// Getters
 	Transform* GetTransform();
-	DirectX::XMFLOAT4X4 GetView();
-	DirectX::XMFLOAT4X4 GetProjection();
-	float GetMovementSpeed();
-	float GetMouseLookSpeed();
-	float GetFieldOfView();
-	float GetAspectRatio();
-	float GetNearClip();
-	float GetFarClip();
-	float GetOrthographicWidth();
-	ProjectionType GetProjectionType();
+	DirectX::XMFLOAT4X4 GetView() const;
+	DirectX::XMFLOAT4X4 GetProjection() const;
+	float GetMovementSpeed() const;
+	float GetMouseLookSpeed() const;
+	float GetFieldOfView() const;
+	float GetAspectRatio() const;
+	float GetNearClip() const;
+	float GetFarClip() const;
+	float GetOrthographicWidth() const;
+	ProjectionType GetProjectionType() const;
 
 	// Update Functions
-	void Update(float dt);
+	void Update();
 	void UpdateViewMatrix();
 	void UpdateProjectionMatrix(float aspectRatio);
 };

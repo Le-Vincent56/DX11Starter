@@ -3,23 +3,19 @@
 
 using namespace DirectX;
 
-UserInput::UserInput()
+UserInput::UserInput(Transform& currentTarget, ControlType type) : 
+    currentTarget(currentTarget), 
+    type(type)
 {
 	movementSpeed = 0.0f;
 	lookSpeed = 0.0f;
-
-    currentTarget = nullptr;
-    camera = nullptr;
-    type = ControlType::None;
 }
 
 UserInput::~UserInput()
 {
-    delete currentTarget;
-    delete camera;
 }
 
-void UserInput::SetTarget(Transform* currentTarget, ControlType type)
+void UserInput::SetTarget(Transform& currentTarget, ControlType type)
 {
 	this->currentTarget = currentTarget;
     this->type = type;
@@ -35,10 +31,10 @@ void UserInput::SetLookSpeed(float lookSpeed)
 	this->lookSpeed = lookSpeed;
 }
 
-void UserInput::Update(float& dt)
+void UserInput::Update(const float& deltaTime)
 {
     // Update movement speed
-    float currentSpeed = movementSpeed * dt;
+    float currentSpeed = movementSpeed * deltaTime;
 
     // Get input
     Input& input = Input::GetInstance();
@@ -74,7 +70,7 @@ void UserInput::UpdateCameraInput(Input& input, float currentSpeed)
     if (input.KeyDown('D')) { relativeInput.x += currentSpeed; } // Move right
 
     // Perform relative move
-    currentTarget->MoveRelative(relativeInput);
+    currentTarget.MoveRelative(relativeInput);
 
     // Get absolute movement from input
     XMFLOAT3 absoluteInput(0, 0, 0);
@@ -82,21 +78,21 @@ void UserInput::UpdateCameraInput(Input& input, float currentSpeed)
     if (input.KeyDown(VK_CONTROL)) { absoluteInput.y -= currentSpeed; } // Move down
 
     // Perform absolute move
-    currentTarget->MoveAbsolute(absoluteInput);
+    currentTarget.MoveAbsolute(absoluteInput);
 
     // Check if the left mouse button is being held down
     if (input.MouseLeftDown())
     {
         // Get the mouse deltas and multiply by the look speed
-        int xDelt = input.GetMouseXDelta() * lookSpeed;
-        int yDelt = input.GetMouseYDelta() * lookSpeed;
+        float xDelt = input.GetMouseXDelta() * lookSpeed;
+        float yDelt = input.GetMouseYDelta() * lookSpeed;
 
         // Rotate by the deltas in opposite order
-        currentTarget->Rotate(yDelt, xDelt, 0);
+        currentTarget.Rotate(yDelt, xDelt, 0);
 
         // Clamp the x rotation
-        XMFLOAT3 currentRotation = currentTarget->GetPitchYawRoll();
+        XMFLOAT3 currentRotation = currentTarget.GetPitchYawRoll();
         currentRotation.x = MathUtils::Clamp(currentRotation.x, XM_PIDIV2, -XM_PIDIV2);
-        currentTarget->SetRotation(currentRotation);
+        currentTarget.SetRotation(currentRotation);
     }
 }

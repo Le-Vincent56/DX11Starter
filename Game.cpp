@@ -38,6 +38,7 @@ Game::Game(HINSTANCE hInstance)
 	CreateConsoleWindow(500, 120, 32, 120);
 	printf("Console window created successfully.  Feel free to printf() here.\n");
 #endif
+	activeCamera = 0;
 	gameRenderer = nullptr;
 }
 
@@ -147,6 +148,11 @@ void Game::Init()
 
 	// Initialize the renderer
 	gameRenderer->Init();
+
+	// Create a user input controller
+	userInput = std::make_shared<UserInput>(*cameras[activeCamera]->GetTransform(), ControlType::Camera);
+	userInput->SetMovementSpeed(cameras[activeCamera]->GetMovementSpeed());
+	userInput->SetLookSpeed(cameras[activeCamera]->GetMouseLookSpeed());
 
 	// Initialize ImGui itself & platform/renderer backends
 	IMGUI_CHECKVERSION();
@@ -449,6 +455,9 @@ void Game::Update(float deltaTime, float totalTime)
 	// Build the UI
 	BuildUI();
 
+	// Update the user input controller
+	userInput->Update(deltaTime);
+
 	// Update entities
 	UpdateEntities(deltaTime, totalTime);
 
@@ -456,7 +465,7 @@ void Game::Update(float deltaTime, float totalTime)
 	gameRenderer->Update(entities);
 
 	// Update camera
-	cameras[activeCamera]->Update(deltaTime);
+	cameras[activeCamera]->Update();
 
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::GetInstance().KeyDown(VK_ESCAPE))
@@ -647,8 +656,12 @@ void Game::ConstructCameraUI()
 	float nearClip = cameras[activeCamera]->GetNearClip();
 	float farClip = cameras[activeCamera]->GetFarClip();
 
-	// Get the projection type
-	ProjectionType projectionType = cameras[activeCamera]->GetProjectionType();
+	// Have buttons trigger perspective or orthographic perspectives
+	if (ImGui::Button("Perspective"))
+		cameras[activeCamera]->SetProjectionType(ProjectionType::Perspective);
+	ImGui::SameLine();
+	if (ImGui::Button("Orthographic"))
+		cameras[activeCamera]->SetProjectionType(ProjectionType::Orthographic);
 	
 	// Allow the setting of the basic transform variables
 	if (ImGui::DragFloat3("Camera Position", &position.x, 0.01f))
@@ -657,36 +670,30 @@ void Game::ConstructCameraUI()
 		cameras[activeCamera]->GetTransform()->SetRotation(rotation);
 
 	// Allow the setting of the near and far clip variables
-	if (ImGui::SliderFloat("Near Clip Distance", &nearClip, 0.001, 1.0f))
+	if (ImGui::SliderFloat("Near Clip Distance", &nearClip, 0.001f, 1.0f))
 		cameras[activeCamera]->SetNearClip(nearClip);
 	if (ImGui::SliderFloat("Far Clip Distance", &farClip, 10.0f, 1000.0f))
 		cameras[activeCamera]->SetFarClip(farClip);
 
-	// Allow the chaging o the projection type
-	int typeIndex = (int)projectionType;
-	if (ImGui::Combo("Projection Type", &typeIndex, "Perspective\0Orthographic"))
-	{
-		projectionType = (ProjectionType)typeIndex;
-		cameras[activeCamera]->SetProjectionType(projectionType);
-	}
+	// Get the field of view and convert it to degrees
+	float fieldOfView = cameras[activeCamera]->GetFieldOfView() * 180.0f / XM_PI;
 
-	// Show different things depending on the projection type
-	if (projectionType == ProjectionType::Perspective)
-	{
-		// Get the field of view and convert it to degrees
-		float fieldOfView = cameras[activeCamera]->GetFieldOfView() * 180.0f / XM_PI;
+	// Get the orthographic width
+	float orthoWidth = cameras[activeCamera]->GetOrthographicWidth();
 
+	// Change UI based on projection type
+	switch (cameras[activeCamera]->GetProjectionType())
+	{
+	case ProjectionType::Perspective:
 		// Allow the setting of the field of view
 		if (ImGui::SliderFloat("Field of View (Degrees)", &fieldOfView, 0.01f, 180.0f))
 			cameras[activeCamera]->SetFieldOfView(fieldOfView * XM_PI / 180.0f); // Need to convert back to radians
-	}
-	else
-	{
-		// Get the orthographic width
-		float orthoWidth = cameras[activeCamera]->GetOrthographicWidth();
+		break;
 
-		// Allow the setting of the orthogrpahic width
+	case ProjectionType::Orthographic:
+		// Allow the setting of the orthographic width
 		if (ImGui::SliderFloat("Orthographic Width", &orthoWidth, 1.0f, 10.0f))
 			cameras[activeCamera]->SetOrthographicWidth(orthoWidth);
+		break;
 	}
 }

@@ -23,7 +23,8 @@ Camera::Camera(
     orthographicWidth(2.0f)
 {
     // Set the transform position
-    transform.SetPosition(position);
+    this->transform = new Transform();
+    transform->SetPosition(position);
 
     // Update camera matrices
     UpdateViewMatrix();
@@ -52,7 +53,8 @@ Camera::Camera(
     orthographicWidth(2.0f)
 {
     // Set the transform position
-    transform.SetPosition(x, y, z);
+    this->transform = new Transform();
+    transform->SetPosition(x, y, z);
 
     // Update camera matrices
     UpdateViewMatrix();
@@ -61,6 +63,8 @@ Camera::Camera(
 
 Camera::~Camera()
 {
+    delete transform;
+    transform = nullptr;
 }
 
 void Camera::SetMovementSpeed(float movementSpeed)
@@ -107,60 +111,60 @@ void Camera::SetProjectionType(ProjectionType projectionType)
 
 Transform* Camera::GetTransform()
 {
-    return &this->transform;
+    return this->transform;
 }
 
-DirectX::XMFLOAT4X4 Camera::GetView()
+DirectX::XMFLOAT4X4 Camera::GetView() const
 {
     return this->viewMatrix;
 }
 
-DirectX::XMFLOAT4X4 Camera::GetProjection()
+DirectX::XMFLOAT4X4 Camera::GetProjection() const
 {
     return this->projMatrix;
 }
 
-float Camera::GetMovementSpeed()
+float Camera::GetMovementSpeed() const
 {
     return this->movementSpeed;
 }
 
-float Camera::GetMouseLookSpeed()
+float Camera::GetMouseLookSpeed() const
 {
     return this->mouseLookSpeed;
 }
 
-float Camera::GetFieldOfView()
+float Camera::GetFieldOfView() const
 {
     return this->fieldOfView;
 }
 
-float Camera::GetAspectRatio()
+float Camera::GetAspectRatio() const
 {
     return this->aspectRatio;
 }
 
-float Camera::GetNearClip()
+float Camera::GetNearClip() const
 {
     return this->nearClip;
 }
 
-float Camera::GetFarClip()
+float Camera::GetFarClip() const
 {
     return this->farClip;
 }
 
-float Camera::GetOrthographicWidth()
+float Camera::GetOrthographicWidth() const
 {
     return this->orthographicWidth;
 }
 
-ProjectionType Camera::GetProjectionType()
+ProjectionType Camera::GetProjectionType() const
 {
     return this->projectionType;
 }
 
-void Camera::Update(float dt)
+void Camera::Update()
 {
     // Update the view matrix
     UpdateViewMatrix();
@@ -168,12 +172,17 @@ void Camera::Update(float dt)
 
 void Camera::UpdateViewMatrix()
 {
+    // Get the position and forward vectors, and the world up vector
+    XMFLOAT3 position = transform->GetPosition();
+    XMVECTOR positionVec = XMLoadFloat3(&position);
+    XMFLOAT3 forward = transform->GetForward();
+    XMVECTOR forwardVec = XMLoadFloat3(&forward);
     XMVECTOR worldUp = XMVectorSet(0, 1, 0, 0);
 
     // Create the view matrix
     XMMATRIX view = XMMatrixLookToLH(
-        XMLoadFloat3(&transform.GetPosition()),
-        XMLoadFloat3(&transform.GetForward()),
+        positionVec,
+        forwardVec,
         worldUp
     );
 
@@ -189,24 +198,34 @@ void Camera::UpdateProjectionMatrix(float aspectRatio)
     // Establish a projection matrix
     XMMATRIX projectionMatrix;
 
-    // Set projection matrix using Perspective Projection
-    if (projectionType == ProjectionType::Perspective)
+    switch (projectionType)
     {
+    case ProjectionType::Perspective: // Perspective D
         projectionMatrix = XMMatrixPerspectiveFovLH(
             fieldOfView,    // Field of view angle
             aspectRatio,    // Aspect ratio
             nearClip,       // Near clip plane distance
             farClip         // Far clip plane distance
         );
-    }
-    else // Set projection matrix using Orthographic Projection
-    {
+        break;
+
+    case ProjectionType::Orthographic: // Orthographic Projection
         projectionMatrix = XMMatrixOrthographicLH(
             orthographicWidth,                  // Projection width
             orthographicWidth / aspectRatio,    // Project height
             nearClip,                           // Near clip plane distance
             farClip                             // Far clip plane distance
         );
+        break;
+
+    default: // Default to Perspective projection
+        projectionMatrix = XMMatrixPerspectiveFovLH(
+            fieldOfView,    // Field of view angle
+            aspectRatio,    // Aspect ratio
+            nearClip,       // Near clip plane distance
+            farClip         // Far clip plane distance
+        );
+        break;
     }
 
     // Set the projection matrix

@@ -10,6 +10,7 @@
 #include "BufferStructs.h"
 #include "GameRenderer.h"
 #include "Camera.h"
+#include "UserInput.h"
 
 
 class Game 
@@ -66,5 +67,8 @@ private:
 
 	// Entities
 	std::vector<std::shared_ptr<GameEntity>> entities;
+
+	// User input
+	std::shared_ptr<UserInput> userInput;
 };
 
