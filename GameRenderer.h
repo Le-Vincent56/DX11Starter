@@ -25,6 +25,7 @@ private:
 	std::vector<std::shared_ptr<GameEntity>> renderEntities;
 
 	// Variables
+	DirectX::XMFLOAT3 ambientTerm;
 	float bgColor[4] = { 0.4f, 0.6f, 0.75f, 1.0f };
 	float totalTime = 0;
 

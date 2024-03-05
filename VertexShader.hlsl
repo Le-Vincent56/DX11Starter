@@ -1,3 +1,5 @@
+#include "ShaderStructs.hlsli"
+
 struct VertexShaderInput
 { 
 	float3 localPosition	: POSITION;     // XYZ position
@@ -5,15 +7,14 @@ struct VertexShaderInput
     float2 uv				: TEXCOORD;		// UV coordinates
 };
 
-struct VertexToPixel
-{
-	float4 screenPosition	: SV_POSITION;	// XYZW position (System Value Position)
-    float2 uv				: TEXCOORD;		// UV coordinate
-};
-
-cbuffer ExternalData : register(b0)
+cbuffer EntityData : register(b0)
 {
 	matrix world;
+	matrix worldInvTranspose;
+}
+
+cbuffer FrameData : register(b1)
+{
 	matrix view;
 	matrix projection;
 }
@@ -29,6 +30,10 @@ VertexToPixel main(VertexShaderInput input)
 
 	// Set UV and Normals
     output.uv = input.uv;
+	output.normal = mul((float3x3)worldInvTranspose, input.normal);
+
+	// Set world position
+	output.worldPosition = mul(world, float4(input.localPosition, 1)).xyz;
 	
 	return output;
 }

@@ -188,13 +188,14 @@ void Game::CreateGeometry()
 // --------------------------------------------------------
 void Game::CreateMaterials()
 {
-	XMFLOAT4 red = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
-	XMFLOAT4 green = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-	XMFLOAT4 blue = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
+	XMFLOAT3 red = XMFLOAT3(1.0f, 0.0f, 0.0f);
+	XMFLOAT3 green = XMFLOAT3(0.0f, 1.0f, 0.0f);
+	XMFLOAT3 blue = XMFLOAT3(0.0f, 0.0f, 1.0f);
 
 	materials.push_back(
 		std::make_shared<Material>(
 			red,
+			0.5f,
 			gameRenderer->GetPixelShader(),
 			gameRenderer->GetVertexShader()
 		)
@@ -203,6 +204,7 @@ void Game::CreateMaterials()
 	materials.push_back(
 		std::make_shared<Material>(
 			green,
+			0.0f,
 			gameRenderer->GetPixelShader(),
 			gameRenderer->GetVertexShader()
 		)
@@ -211,6 +213,7 @@ void Game::CreateMaterials()
 	materials.push_back(
 		std::make_shared<Material>(
 			blue,
+			1.0f,
 			gameRenderer->GetPixelShader(),
 			gameRenderer->GetVertexShader()
 		)
@@ -527,7 +530,7 @@ void Game::ConstructShadersUI()
 		std::shared_ptr<SimpleVertexShader> vs = renderEntities[i]->GetMaterial()->GetVertexShader();
 
 		// Get editable variables
-		XMFLOAT4 colorTint = renderEntities[i]->GetMaterial()->GetColorTint();
+		XMFLOAT3 colorTint = renderEntities[i]->GetMaterial()->GetColorTint();
 		XMFLOAT4X4 worldMatrix = renderEntities[i]->GetTransform()->GetWorldMatrix();
 
 		// Create the header
@@ -551,11 +554,11 @@ void Game::ConstructShadersUI()
 
 			// Color reset button
 			if (ImGui::Button("Reset Color Tint"))
-				colorTint = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+				colorTint = XMFLOAT3(1.0f, 1.0f, 1.0f);
 		}
 
 		// Set data
-		ps->SetFloat4("colorTint", colorTint);
+		ps->SetFloat3("colorTint", colorTint);
 		vs->SetMatrix4x4("world", worldMatrix);
 
 		// Update constant buffers
@@ -573,7 +576,7 @@ void Game::ConstructEntitiesUI()
 	for (int i = 0; i < entities.size(); ++i)
 	{
 		// Get material data
-		XMFLOAT4 materialTint = entities[i]->GetMaterial()->GetColorTint();
+		XMFLOAT3 materialTint = entities[i]->GetMaterial()->GetColorTint();
 
 		// Get position data
 		XMFLOAT3 position = entities[i]->GetTransform()->GetPosition();

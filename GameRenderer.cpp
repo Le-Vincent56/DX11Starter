@@ -24,6 +24,8 @@ GameRenderer::GameRenderer(
 	swapChain(_swapChain), device(_device), context(_context), backBufferRTV(_backBufferRTV),
 	depthBufferDSV(_depthBufferDSV)
 {
+	// Set ambient term
+	ambientTerm = XMFLOAT3(0.05f, 0.15f, 0.25f);
 }
 
 // --------------------------------------------------------
@@ -148,27 +150,24 @@ void GameRenderer::Draw(bool vsync, bool deviceSupportsTearing, BOOL isFullscree
 		context->ClearDepthStencilView(depthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
+	// Set pixel shader frame data
+	pixelShader->SetFloat3("cameraPos", camera->GetTransform()->GetPosition());
+	pixelShader->CopyBufferData("FrameData");
+
+	// Set vertex shader frame data
+	vertexShader->SetMatrix4x4("view", camera->GetView());
+	vertexShader->SetMatrix4x4("projection", camera->GetProjection());
+	vertexShader->CopyBufferData("FrameData");
+
 	// Draw entities
 	for (int i = 0; i < renderEntities.size(); ++i)
 	{
-		// Update pixel shader info for each entity
-		std::shared_ptr<SimplePixelShader> ps = renderEntities[i]->GetMaterial()->GetPixelShader();
-		ps->SetFloat4("colorTint", renderEntities[i]->GetMaterial()->GetColorTint());
-		ps->SetFloat("time", totalTime * 5.0f);
-
-		// Update vertex shader info for each entity
-		std::shared_ptr<SimpleVertexShader> vs = renderEntities[i]->GetMaterial()->GetVertexShader();
-		vs->SetMatrix4x4("world", renderEntities[i]->GetTransform()->GetWorldMatrix());
-		vs->SetMatrix4x4("view", camera->GetView());
-		vs->SetMatrix4x4("projection", camera->GetProjection());
-
-		// Update constant buffers
-		ps->CopyAllBufferData();
-		vs->CopyAllBufferData();
-
-		// Set entity shaders
-		renderEntities[i]->GetMaterial()->GetVertexShader()->SetShader();
-		renderEntities[i]->GetMaterial()->GetPixelShader()->SetShader();
+		// Prepare the material's shader data
+		renderEntities[i]->GetMaterial()->PrepareMaterial(
+			renderEntities[i]->GetTransform(), 
+			ambientTerm,
+			totalTime
+		);
 
 		// Render the entity
 		renderEntities[i]->Draw();

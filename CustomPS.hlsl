@@ -1,18 +1,26 @@
-struct VertexToPixel
-{
-    float4 screenPosition : SV_POSITION;
-    float2 uv : TEXCOORD;
-};
+#include "ShaderStructs.hlsli"
 
-cbuffer ExternalData : register(b0)
+cbuffer EntityData : register(b0)
 {
-    float4 colorTint;
+    float3 colorTint;
+    float roughness;
+    float3 ambientTerm;
     float time;
+    
+}
+
+cbuffer FrameData : register(b1)
+{
+    float3 cameraPos;
 }
 
 float4 main(VertexToPixel input) : SV_TARGET
 {
+    // Normalize input normals
+    input.normal = normalize(input.normal);
+
     float blink = (sin(time) * 2.0f);
     float multiplier = (blink + tan(input.uv.x)) * (sin(input.screenPosition.x) * time);
-    return colorTint * multiplier;
+    float3 ambientColor = colorTint * ambientTerm;
+    return float4(ambientColor, 1);
 }

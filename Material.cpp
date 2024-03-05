@@ -1,11 +1,13 @@
 #include "Material.h"
 
 Material::Material(
-    DirectX::XMFLOAT4 colorTint, 
+    DirectX::XMFLOAT3 colorTint,
+    float roughness,
     std::shared_ptr<SimplePixelShader> pixelShader, 
     std::shared_ptr<SimpleVertexShader> vertexShader)
     :
     colorTint(colorTint),
+    roughness(roughness),
     pixelShader(pixelShader),
     vertexShader(vertexShader)
 {
@@ -15,9 +17,14 @@ Material::~Material()
 {
 }
 
-DirectX::XMFLOAT4 Material::GetColorTint() const
+DirectX::XMFLOAT3 Material::GetColorTint() const
 {
     return this->colorTint;
+}
+
+float Material::GetRoughness()
+{
+    return this->roughness;
 }
 
 std::shared_ptr<SimplePixelShader> Material::GetPixelShader()
@@ -38,10 +45,15 @@ void Material::SetColorTint(float r, float g, float b)
     colorTint.z = b;
 }
 
-void Material::SetColorTint(DirectX::XMFLOAT4 colorTint)
+void Material::SetColorTint(DirectX::XMFLOAT3 colorTint)
 {
     // Call component version using parameter components
     SetColorTint(colorTint.x, colorTint.y, colorTint.z);
+}
+
+void Material::SetRoughness(float roughness)
+{
+    this->roughness = roughness;
 }
 
 void Material::SetPixelShader(std::shared_ptr<SimplePixelShader> pixelShader)
@@ -52,4 +64,24 @@ void Material::SetPixelShader(std::shared_ptr<SimplePixelShader> pixelShader)
 void Material::SetVertexShader(std::shared_ptr<SimpleVertexShader> vertexShader)
 {
     this->vertexShader = vertexShader;
+}
+
+void Material::PrepareMaterial(Transform* transform, DirectX::XMFLOAT3 ambientTerm, float totalTime)
+{
+    // Set shaders
+    pixelShader->SetShader();
+    vertexShader->SetShader();
+
+    // Update pixel shader info for each entity
+    pixelShader->SetFloat3("colorTint", colorTint);
+    pixelShader->SetFloat("time", totalTime * 5.0f);
+    pixelShader->SetFloat3("ambientTerm", ambientTerm);
+    pixelShader->SetFloat("roughness", roughness);
+
+    // Update vertex shader info for each entity
+    vertexShader->SetMatrix4x4("world", transform->GetWorldMatrix());
+    vertexShader->SetMatrix4x4("worldInvTranspose", transform->GetWorldInverseTransposeMatrix());
+
+    pixelShader->CopyBufferData("EntityData");
+    vertexShader->CopyBufferData("EntityData");
 }

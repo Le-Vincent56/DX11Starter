@@ -1,8 +1,4 @@
-struct VertexToPixel
-{
-	float4 screenPosition	: SV_POSITION;
-    float2 uv				: TEXTCOORD;
-};
+#include "ShaderStructs.hlsli"
 
 cbuffer ExternalData : register(b0)
 {
