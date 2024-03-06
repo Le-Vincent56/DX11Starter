@@ -65,6 +65,9 @@ void GameRenderer::Init()
 {
 	// Load shaders
 	LoadShaders();
+
+	// Create light manager
+	lightManager = std::make_shared<LightManager>(this->pixelShader);
 }
 
 // --------------------------------------------------------
@@ -162,6 +165,9 @@ void GameRenderer::Draw(bool vsync, bool deviceSupportsTearing, BOOL isFullscree
 	// Draw entities
 	for (int i = 0; i < renderEntities.size(); ++i)
 	{
+		// Send light data
+		lightManager->SetPixelData();
+		
 		// Prepare the material's shader data
 		renderEntities[i]->GetMaterial()->PrepareMaterial(
 			renderEntities[i]->GetTransform(), 

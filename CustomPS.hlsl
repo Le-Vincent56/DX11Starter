@@ -6,7 +6,7 @@ cbuffer EntityData : register(b0)
     float roughness;
     float3 ambientTerm;
     float time;
-    
+    Light light;
 }
 
 cbuffer FrameData : register(b1)

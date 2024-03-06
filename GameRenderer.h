@@ -3,6 +3,7 @@
 
 #include "GameEntity.h"
 #include "Camera.h"
+#include "LightManager.h"
 
 class GameRenderer
 {
@@ -23,6 +24,9 @@ private:
 
 	// Entities
 	std::vector<std::shared_ptr<GameEntity>> renderEntities;
+
+	// Light manager
+	std::shared_ptr<LightManager> lightManager;
 
 	// Variables
 	DirectX::XMFLOAT3 ambientTerm;
