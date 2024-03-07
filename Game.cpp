@@ -195,15 +195,6 @@ void Game::CreateMaterials()
 	materials.push_back(
 		std::make_shared<Material>(
 			red,
-			0.5f,
-			gameRenderer->GetPixelShader(),
-			gameRenderer->GetVertexShader()
-		)
-	);
-
-	materials.push_back(
-		std::make_shared<Material>(
-			green,
 			0.0f,
 			gameRenderer->GetPixelShader(),
 			gameRenderer->GetVertexShader()
@@ -212,8 +203,17 @@ void Game::CreateMaterials()
 
 	materials.push_back(
 		std::make_shared<Material>(
-			blue,
+			green,
 			1.0f,
+			gameRenderer->GetPixelShader(),
+			gameRenderer->GetVertexShader()
+		)
+	);
+
+	materials.push_back(
+		std::make_shared<Material>(
+			blue,
+			0.5f,
 			gameRenderer->GetPixelShader(),
 			gameRenderer->GetVertexShader()
 		)
@@ -378,7 +378,7 @@ void Game::UpdateEntities(const float& deltaTime, const float& totalTime)
 	// Rotate and scalle all entities
 	for (int i = 0; i < entities.size(); ++i)
 	{
-		entities[i]->GetTransform()->SetRotation(0, 0, totalTime);
+		entities[i]->GetTransform()->SetRotation(totalTime, 0, totalTime);
 		entities[i]->GetTransform()->SetScale(scale, scale, scale);
 	}
 }

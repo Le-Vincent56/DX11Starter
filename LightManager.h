@@ -17,6 +17,6 @@ public:
 	void Init();
 	void SetPixelData();
 
-	Light light;
+	std::vector<Light> lights;
 };
 
