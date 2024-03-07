@@ -7,7 +7,7 @@ cbuffer EntityData : register(b0)
     float roughness;
     float3 ambientTerm;
     float time;
-    Light lights[3];
+    Light lights[5];
 }
 
 cbuffer FrameData : register(b1)
@@ -28,13 +28,30 @@ float4 main(VertexToPixel input) : SV_TARGET
     float3 totalColor = colorTint * ambientTerm;
 
     // Normalize lighting
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 5; i++)
     {
         Light light = lights[i];
         light.direction = normalize(light.direction);
 
         // Add directional light
-        totalColor += CalcDirectionalLight(light, input.normal, cameraPos, input.worldPosition, roughness);
+        switch (light.type)
+        {
+            // Directional Light
+            case LIGHT_TYPE_DIRECTIONAL:
+                totalColor += CalcDirectionalLight(light, input.normal, cameraPos, input.worldPosition, roughness);
+                break;
+            
+            // Point Light
+            case LIGHT_TYPE_POINT:
+                totalColor += CalcPointLight(light, input.normal, cameraPos, input.worldPosition, roughness);
+                break;
+            
+            // Spot Light
+            case LIGHT_TYPE_SPOT:
+                // TODO
+                break;
+        }
+        
     }
 
     return float4(totalColor, 1);

@@ -29,7 +29,6 @@ private:
 	std::shared_ptr<LightManager> lightManager;
 
 	// Variables
-	DirectX::XMFLOAT3 ambientTerm;
 	float bgColor[4] = { 0.4f, 0.6f, 0.75f, 1.0f };
 	float totalTime = 0;
 
@@ -52,6 +51,7 @@ public:
 	std::shared_ptr<SimplePixelShader> GetPixelShader();
 	std::shared_ptr<SimpleVertexShader> GetVertexShader();
 	std::vector<std::shared_ptr<GameEntity>> GetRenderedEntities();
+	std::shared_ptr<LightManager> GetLightManager();
 
 	// Initialize Functions
 	void Init();
