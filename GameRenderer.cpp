@@ -26,8 +26,6 @@ GameRenderer::GameRenderer(
 	swapChain(_swapChain), device(_device), context(_context), backBufferRTV(_backBufferRTV),
 	depthBufferDSV(_depthBufferDSV)
 {
-	// Set ambient term
-	ambientTerm = XMFLOAT3(0.05f, 0.15f, 0.25f);
 }
 
 // --------------------------------------------------------
@@ -58,6 +56,11 @@ std::shared_ptr<SimpleVertexShader> GameRenderer::GetVertexShader()
 std::vector<std::shared_ptr<GameEntity>> GameRenderer::GetRenderedEntities()
 {
 	return this->renderEntities;
+}
+
+std::shared_ptr<LightManager> GameRenderer::GetLightManager()
+{
+	return this->lightManager;
 }
 
 // --------------------------------------------------------
@@ -193,7 +196,7 @@ void GameRenderer::Draw(bool vsync, bool deviceSupportsTearing, BOOL isFullscree
 		// Prepare the material's shader data
 		renderEntities[i]->GetMaterial()->PrepareMaterial(
 			renderEntities[i]->GetTransform(), 
-			ambientTerm,
+			lightManager->GetAmbientTerm(),
 			totalTime
 		);
 

@@ -153,6 +153,7 @@
     <ClCompile Include="ImGui\imgui_tables.cpp" />
     <ClCompile Include="ImGui\imgui_widgets.cpp" />
     <ClCompile Include="LightManager.cpp" />
+    <ClCompile Include="Lights.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="MathUtils.cpp" />
     <ClCompile Include="Mesh.cpp" />

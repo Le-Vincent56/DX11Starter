@@ -327,6 +327,10 @@ void Game::BuildUI()
 		ImGui::SameLine();
 		if (ImGui::Button("Camera"))
 			currentTab = 5;
+
+		ImGui::SameLine();
+		if (ImGui::Button("Lights"))
+			currentTab = 6;
 	}
 
 	// Create a small separator
@@ -362,6 +366,9 @@ void Game::BuildUI()
 	case 5:
 		ConstructCameraUI();
 		break;
+
+	case 6:
+		ConstructLightUI();
 	}
 
 	// End the "Inspector" window
@@ -472,6 +479,9 @@ void Game::ConstructMeshesUI()
 {
 	for (int i = 0; i < meshes.size(); i++)
 	{
+		// Push the current ID
+		ImGui::PushID(i);
+
 		// Create the header
 		std::string header = "Mesh " + std::to_string(i);
 		const char* cHeader = header.c_str();
@@ -514,6 +524,9 @@ void Game::ConstructMeshesUI()
 			ImGui::SameLine();
 			ImGui::Text("}");
 		}
+
+		// Push the current ID
+		ImGui::PopID();
 	}
 }
 
@@ -526,6 +539,9 @@ void Game::ConstructShadersUI()
 
 	for (int i = 0; i < renderEntities.size(); ++i)
 	{
+		// Push the current ID
+		ImGui::PushID(i);
+
 		// Get shader pointers
 		std::shared_ptr<SimplePixelShader> ps = renderEntities[i]->GetMaterial()->GetPixelShader();
 		std::shared_ptr<SimpleVertexShader> vs = renderEntities[i]->GetMaterial()->GetVertexShader();
@@ -565,6 +581,9 @@ void Game::ConstructShadersUI()
 		// Update constant buffers
 		ps->CopyAllBufferData();
 		vs->CopyAllBufferData();
+
+		// Pop the current ID
+		ImGui::PopID();
 	}
 }
 
@@ -576,6 +595,9 @@ void Game::ConstructEntitiesUI()
 	// Loop through the entities
 	for (int i = 0; i < entities.size(); ++i)
 	{
+		// Push the current ID
+		ImGui::PushID(i);
+
 		// Get material data
 		XMFLOAT3 materialTint = entities[i]->GetMaterial()->GetColorTint();
 
@@ -586,7 +608,7 @@ void Game::ConstructEntitiesUI()
 		unsigned int meshCount = entities[i]->GetMesh()->GetIndexCount();
 
 		// Create the header
-		std::string header = "Entity " + std::to_string(i);
+		std::string header = "Entity " + std::to_string(i + 1);
 		const char* cHeader = header.c_str();
 
 		// List entities under headers
@@ -606,6 +628,9 @@ void Game::ConstructEntitiesUI()
 		entities[i]->GetTransform()->SetPosition(position);
 		entities[i]->GetTransform()->SetRotation(pyrRotation);
 		entities[i]->GetTransform()->SetScale(scale);
+
+		// Pop the current ID
+		ImGui::PopID();
 	}
 }
 
@@ -683,4 +708,78 @@ void Game::ConstructCameraUI()
 			cameras[activeCamera]->SetOrthographicWidth(orthoWidth);
 		break;
 	}
+}
+
+void Game::ConstructLightUI()
+{
+	// Loop through all lights
+	std::vector<Light> lights = gameRenderer->GetLightManager()->GetLights();
+
+	// Edit ambient term
+	XMFLOAT3 ambientTerm = gameRenderer->GetLightManager()->GetAmbientTerm();
+	ImGui::ColorEdit3("Ambient Term", &ambientTerm.x);
+
+	for (int i = 0; i < lights.size(); ++i)
+	{
+		// Push the current ID
+		ImGui::PushID(i);
+
+		// Get light data
+		int type = lights[i].GetData().Type;
+		XMFLOAT3 direction = lights[i].GetData().Direction;
+		float range = lights[i].GetData().Range;
+		XMFLOAT3 position = lights[i].GetData().Position;
+		XMFLOAT3 color = lights[i].GetData().Color;
+		float intensity = lights[i].GetData().Intensity;
+
+		// Create the header
+		std::string header = "Light " + std::to_string(i + 1);
+		const char* cHeader = header.c_str();
+
+		// List lights under headers
+		if (ImGui::CollapsingHeader(cHeader))
+		{
+			// Show what type
+			switch (type) 
+			{
+			case 0:
+				ImGui::Text("Directional Light");
+				ImGui::DragFloat3("Direction", &direction.x);
+				ImGui::ColorEdit3("Color", &color.x);
+				ImGui::SliderFloat("Intensity", &intensity, 0.0f, 1.0f);
+				break;
+
+			case 1:
+				ImGui::Text("Point Light");
+				ImGui::DragFloat3("Direction", &direction.x);
+				ImGui::SliderFloat("Range", &range, 0.0f, 100.0f);
+				ImGui::DragFloat3("Position", &position.x);
+				ImGui::ColorEdit3("Color", &color.x);
+				ImGui::SliderFloat("Intensity", &intensity, 0.0f, 1.0f);
+				break;
+
+			case 2:
+				ImGui::Text("Spot Light");
+				break;
+			}
+		}
+
+		// Set light data
+		lights[i].SetDirection(direction);
+		lights[i].SetColor(color);
+		lights[i].SetIntensity(intensity);
+
+		// Set positional data for point/spot lights
+		lights[i].SetPosition(position);
+		lights[i].SetRange(range);
+
+		// Pop the current ID
+		ImGui::PopID();
+	}
+
+	// Set ambient term
+	gameRenderer->GetLightManager()->SetAmbientTerm(ambientTerm);
+
+	// Set lights
+	gameRenderer->GetLightManager()->SetLights(lights);
 }

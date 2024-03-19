@@ -37,8 +37,8 @@ float GetSpecular(float3 reflection, float3 view, float roughness)
 
 float GetAttenuation(Light light, float3 pixelWorldPos)
 {
-    float distance = distance(light.position, pixelWorldPos);
-    float attenuation = saturate(1.0f - (distance * distance / (light.range * light.range)));
+    float dist = distance(light.position, pixelWorldPos);
+    float attenuation = saturate(1.0f - (dist * dist / (light.range * light.range)));
     return attenuation * attenuation;
 }
 
