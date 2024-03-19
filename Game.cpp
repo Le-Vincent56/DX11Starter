@@ -75,6 +75,7 @@ void Game::Init()
 	// Initialize the renderer - initializes shaders as well
 	gameRenderer->Init();
 
+	// Create geometry
 	CreateGeometry();
 
 	// Generate materials

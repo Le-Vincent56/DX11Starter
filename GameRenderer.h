@@ -56,6 +56,7 @@ public:
 	// Initialize Functions
 	void Init();
 	void LoadShaders();
+	void LoadTextures();
 
 	// Update Functions
 	void SelectRenderableEntities(std::vector<std::shared_ptr<GameEntity>>& gameEntities);
