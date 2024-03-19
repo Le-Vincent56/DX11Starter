@@ -1,6 +1,9 @@
 #include "ShaderStructs.hlsli"
 #include "Lights.hlsli"
 
+Texture2D SurfaceTexture : register(t0);
+SamplerState BasicSampler : register(s0);
+
 cbuffer EntityData : register(b0)
 {
     float3 colorTint;
@@ -20,12 +23,11 @@ float4 main(VertexToPixel input) : SV_TARGET
     // Normalize input normals
     input.normal = normalize(input.normal);
 
-    /*float blink = (sin(time) * 2.0f);
-    float multiplier = (blink + tan(input.uv.x)) * (sin(input.screenPosition.x) * time);
-    float3 ambientColor = colorTint * ambientTerm;*/
+    // Get surface color of the texture
+    float3 surfaceColor = SurfaceTexture.Sample(BasicSampler, input.uv).rgb;
 
     // Get the total color
-    float3 totalColor = colorTint * ambientTerm;
+    float3 totalColor = surfaceColor * colorTint * ambientTerm;
 
     // Normalize lighting
     for (int i = 0; i < 5; i++)

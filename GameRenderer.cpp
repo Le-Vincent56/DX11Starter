@@ -8,7 +8,6 @@
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_impl_win32.h"
 
-#include <WICTextureLoader.h>
 #include <iostream>
 
 using namespace DirectX;
@@ -71,9 +70,6 @@ void GameRenderer::Init()
 	// Load shaders
 	LoadShaders();
 
-	// Load Textures
-	LoadTextures();
-
 	// Create light manager
 	lightManager = std::make_shared<LightManager>(this->pixelShader);
 }
@@ -99,23 +95,6 @@ void GameRenderer::LoadShaders()
 		context,
 		FixPath(L"VertexShader.cso").c_str()
 	);
-}
-
-// --------------------------------------------------------
-// Load textures
-// --------------------------------------------------------
-void GameRenderer::LoadTextures()
-{
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shaderResourceView;
-
-	CreateWICTextureFromFile(
-		device.Get(),
-		context.Get(),
-		FixPath(L"../../Textures/patterned_clay_plaster_diff_4k.png").c_str(),
-		0,
-		shaderResourceView.GetAddressOf()
-	);
-
 }
 
 // --------------------------------------------------------

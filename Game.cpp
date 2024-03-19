@@ -13,6 +13,8 @@
 #include <d3dcompiler.h>
 #include <math.h>
 
+#include <WICTextureLoader.h>
+
 // For the DirectX Math library
 using namespace DirectX;
 
@@ -189,36 +191,69 @@ void Game::CreateGeometry()
 // --------------------------------------------------------
 void Game::CreateMaterials()
 {
-	XMFLOAT3 red = XMFLOAT3(1.0f, 0.0f, 0.0f);
-	XMFLOAT3 green = XMFLOAT3(0.0f, 1.0f, 0.0f);
-	XMFLOAT3 blue = XMFLOAT3(0.0f, 0.0f, 1.0f);
+	// Create sampler
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
+	D3D11_SAMPLER_DESC samplerDesc = {};
 
-	materials.push_back(
-		std::make_shared<Material>(
-			red,
-			0.0f,
-			gameRenderer->GetPixelShader(),
-			gameRenderer->GetVertexShader()
-		)
+	// Define how to handle UV's outside of the 0-1 range
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+
+	// Set a filter
+	samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+	samplerDesc.MaxAnisotropy = 8; // Range between 1-16, higher is better but slower
+
+	// Enable mipmapping
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	// Store the sampler description into the sampler
+	device->CreateSamplerState(&samplerDesc, sampler.GetAddressOf());
+
+	// Create ShaderResourceViews
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> patternedClaySRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodTableSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> grayRockSRV;
+
+	// Load Textures
+	CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Textures/patterned_clay_plaster_diff_4k.png").c_str(),
+		0,
+		patternedClaySRV.GetAddressOf()
 	);
 
-	materials.push_back(
-		std::make_shared<Material>(
-			green,
-			1.0f,
-			gameRenderer->GetPixelShader(),
-			gameRenderer->GetVertexShader()
-		)
+	CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Textures/wood_table_001_diff_4k.png").c_str(),
+		0,
+		woodTableSRV.GetAddressOf()
 	);
 
-	materials.push_back(
-		std::make_shared<Material>(
-			blue,
-			0.5f,
-			gameRenderer->GetPixelShader(),
-			gameRenderer->GetVertexShader()
-		)
+	CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Textures/gray_rocks_diff_4k.png").c_str(),
+		0,
+		grayRockSRV.GetAddressOf()
 	);
+
+	std::shared_ptr<Material> clay = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
+	clay->AddTextureSRV("SurfaceTexture", patternedClaySRV);
+	clay->AddSamplerState("BasicSampler", sampler);
+	materials.insert({ "Clay", clay });
+
+	std::shared_ptr<Material> wood = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
+	wood->AddTextureSRV("SurfaceTexture", woodTableSRV);
+	wood->AddSamplerState("BasicSampler", sampler);
+	materials.insert({ "Wood", wood });
+
+	std::shared_ptr<Material> rock = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
+	rock->AddTextureSRV("SurfaceTexture", grayRockSRV);
+	rock->AddSamplerState("BasicSampler", sampler);
+	materials.insert({ "Rock", rock });
 }
 
 // --------------------------------------------------------
@@ -230,7 +265,7 @@ void Game::CreateEntities()
 	entities.push_back(
 		std::make_shared<GameEntity>(
 			meshes[0],
-			materials[0] // Red
+			materials["Clay"]
 		)
 	);
 	entities[0]->GetTransform()->SetPosition(-10.0f, 0.0f, 0.0f);
@@ -238,7 +273,7 @@ void Game::CreateEntities()
 	entities.push_back(
 		std::make_shared<GameEntity>(
 			meshes[0],
-			materials[1] // Blue
+			materials["Wood"]
 		)
 	);
 	entities[1]->GetTransform()->SetPosition(-5.0f, 0.0f, 0.0f);
@@ -246,7 +281,7 @@ void Game::CreateEntities()
 	entities.push_back(
 		std::make_shared<GameEntity>(
 			meshes[1],
-			materials[2] // Green
+			materials["Rock"]
 		)
 	);
 	entities[2]->GetTransform()->SetPosition(0.0f, 0.0f, 0.0f);
@@ -254,7 +289,7 @@ void Game::CreateEntities()
 	entities.push_back(
 		std::make_shared<GameEntity>(
 			meshes[2],
-			materials[1]
+			materials["Wood"]
 		)
 	);
 	entities[3]->GetTransform()->SetPosition(5.0f, 0.0f, 0.0f);
@@ -262,7 +297,7 @@ void Game::CreateEntities()
 	entities.push_back(
 		std::make_shared<GameEntity>(
 			meshes[2],
-			materials[0]
+			materials["Clay"]
 		)
 	);
 	entities[4]->GetTransform()->SetPosition(10.0f, 0.0f, 0.0f);

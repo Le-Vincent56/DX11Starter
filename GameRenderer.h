@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <unordered_map>
 
 #include "GameEntity.h"
 #include "Camera.h"
@@ -32,7 +33,7 @@ private:
 	float bgColor[4] = { 0.4f, 0.6f, 0.75f, 1.0f };
 	float totalTime = 0;
 
-	// Sort materials
+	// Helper functions
 	static bool CompareEntityMaterials(const std::shared_ptr<GameEntity>& entity1, const std::shared_ptr<GameEntity>& entity2);
 	void SortByMaterial(std::vector<std::shared_ptr<GameEntity>>& entities);
 
@@ -56,7 +57,6 @@ public:
 	// Initialize Functions
 	void Init();
 	void LoadShaders();
-	void LoadTextures();
 
 	// Update Functions
 	void SelectRenderableEntities(std::vector<std::shared_ptr<GameEntity>>& gameEntities);

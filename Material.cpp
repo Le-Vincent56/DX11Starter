@@ -66,11 +66,32 @@ void Material::SetVertexShader(std::shared_ptr<SimpleVertexShader> vertexShader)
     this->vertexShader = vertexShader;
 }
 
+// --------------------------------------------------------
+// Add a ShaderResourceView to the map associated with a string
+// --------------------------------------------------------
+void Material::AddTextureSRV(std::string key, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> value)
+{
+    textureSRVs.insert({ key, value });
+}
+
+
+// --------------------------------------------------------
+// Add a SamplerState to the map associated with a string
+// --------------------------------------------------------
+void Material::AddSamplerState(std::string key, Microsoft::WRL::ComPtr<ID3D11SamplerState> value)
+{
+    textureSamplers.insert({ key, value });
+}
+
 void Material::PrepareMaterial(Transform* transform, DirectX::XMFLOAT3 ambientTerm, float totalTime)
 {
     // Set shaders
     pixelShader->SetShader();
     vertexShader->SetShader();
+
+    // Update textures
+    for (auto& t : textureSRVs) { pixelShader->SetShaderResourceView(t.first.c_str(), t.second); }
+    for (auto& s : textureSamplers) { pixelShader->SetSamplerState(s.first.c_str(), s.second); }
 
     // Update pixel shader info for each entity
     pixelShader->SetFloat3("colorTint", colorTint);

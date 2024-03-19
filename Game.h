@@ -3,6 +3,7 @@
 #include <wrl/client.h> // Used for ComPtr - a smart pointer for COM objects
 #include <memory> // Include Memory for shared_ptr
 #include <vector>
+#include <unordered_map>
 
 // Renderer classes
 #include "DXCore.h"
@@ -60,7 +61,7 @@ private:
 	bool showDemoWindow = true;
 
 	// Materials
-	std::vector<std::shared_ptr<Material>> materials;
+	std::unordered_map<std::string, std::shared_ptr<Material>> materials;
 
 	// Meshes
 	std::vector<std::shared_ptr<Mesh>> meshes;
