@@ -3,11 +3,15 @@
 Material::Material(
     DirectX::XMFLOAT3 colorTint,
     float roughness,
+    float offset,
+    float scale,
     std::shared_ptr<SimplePixelShader> pixelShader, 
     std::shared_ptr<SimpleVertexShader> vertexShader)
     :
     colorTint(colorTint),
     roughness(roughness),
+    offset(offset),
+    scale(scale),
     pixelShader(pixelShader),
     vertexShader(vertexShader)
 {
@@ -25,6 +29,16 @@ DirectX::XMFLOAT3 Material::GetColorTint() const
 float Material::GetRoughness()
 {
     return this->roughness;
+}
+
+float Material::GetOffset()
+{
+    return this->offset;
+}
+
+float Material::GetScale()
+{
+    return this->scale;
 }
 
 std::shared_ptr<SimplePixelShader> Material::GetPixelShader()
@@ -54,6 +68,16 @@ void Material::SetColorTint(DirectX::XMFLOAT3 colorTint)
 void Material::SetRoughness(float roughness)
 {
     this->roughness = roughness;
+}
+
+void Material::SetOffset(float offset)
+{
+    this->offset = offset;
+}
+
+void Material::SetScale(float scale)
+{
+    this->scale = scale;
 }
 
 void Material::SetPixelShader(std::shared_ptr<SimplePixelShader> pixelShader)
@@ -95,9 +119,12 @@ void Material::PrepareMaterial(Transform* transform, DirectX::XMFLOAT3 ambientTe
 
     // Update pixel shader info for each entity
     pixelShader->SetFloat3("colorTint", colorTint);
-    pixelShader->SetFloat("time", totalTime * 5.0f);
-    pixelShader->SetFloat3("ambientTerm", ambientTerm);
     pixelShader->SetFloat("roughness", roughness);
+    pixelShader->SetFloat3("ambientTerm", ambientTerm);
+    pixelShader->SetFloat("time", totalTime * 5.0f);
+    pixelShader->SetFloat("offset", offset);
+    pixelShader->SetFloat("scale", scale);
+    
 
     // Update vertex shader info for each entity
     vertexShader->SetMatrix4x4("world", transform->GetWorldMatrix());

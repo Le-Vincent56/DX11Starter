@@ -1,0 +1,2 @@
+For my extra, texture-related feature, I added an offset and scale to my material. In my shader (CustomnPS.hlsl), I use time and offset, as well as scale to edit the input.UV, then
+use that UV to sample my texture. I also added in my ImGUI a way to edit the material data to directly edit the data passed into the shader.

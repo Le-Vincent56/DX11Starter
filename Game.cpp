@@ -240,17 +240,17 @@ void Game::CreateMaterials()
 		grayRockSRV.GetAddressOf()
 	);
 
-	std::shared_ptr<Material> clay = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
+	std::shared_ptr<Material> clay = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, 0.2f, 1.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
 	clay->AddTextureSRV("SurfaceTexture", patternedClaySRV);
 	clay->AddSamplerState("BasicSampler", sampler);
 	materials.insert({ "Clay", clay });
 
-	std::shared_ptr<Material> wood = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
+	std::shared_ptr<Material> wood = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, 0.0f, 2.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
 	wood->AddTextureSRV("SurfaceTexture", woodTableSRV);
 	wood->AddSamplerState("BasicSampler", sampler);
 	materials.insert({ "Wood", wood });
 
-	std::shared_ptr<Material> rock = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
+	std::shared_ptr<Material> rock = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, 0.5f, 3.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
 	rock->AddTextureSRV("SurfaceTexture", grayRockSRV);
 	rock->AddSamplerState("BasicSampler", sampler);
 	materials.insert({ "Rock", rock });
@@ -366,6 +366,10 @@ void Game::BuildUI()
 		ImGui::SameLine();
 		if (ImGui::Button("Lights"))
 			currentTab = 6;
+
+		ImGui::SameLine();
+		if (ImGui::Button("Materials"))
+			currentTab = 7;
 	}
 
 	// Create a small separator
@@ -404,6 +408,11 @@ void Game::BuildUI()
 
 	case 6:
 		ConstructLightUI();
+		break;
+
+	case 7:
+		ConstructMaterialsUI();
+		break;
 	}
 
 	// End the "Inspector" window
@@ -458,7 +467,7 @@ void Game::Update(float deltaTime, float totalTime)
 	userInput->Update(deltaTime);
 
 	// Update entities
-	UpdateEntities(deltaTime, totalTime);
+	//UpdateEntities(deltaTime, totalTime);
 
 	// Update renderer
 	gameRenderer->Update(totalTime, entities);
@@ -817,4 +826,41 @@ void Game::ConstructLightUI()
 
 	// Set lights
 	gameRenderer->GetLightManager()->SetLights(lights);
+}
+
+void Game::ConstructMaterialsUI()
+{
+	for (auto& mat : materials)
+	{
+		// Get the key
+		const char* key = mat.first.c_str();
+
+		// Push the ID
+		ImGui::PushID(key, key);
+
+		// Retrieve data
+		XMFLOAT3 colorTint = mat.second->GetColorTint();
+		float roughness = mat.second->GetRoughness();
+		float offset = mat.second->GetOffset();
+		float scale = mat.second->GetScale();
+
+		// Create a header with the key (name) as the string
+		if (ImGui::CollapsingHeader(key))
+		{
+			// Display data to edit
+			ImGui::ColorEdit3("Color Tint", &colorTint.x);
+			ImGui::SliderFloat("Roughness", &roughness, 0.0f, 1.0f);
+			ImGui::SliderFloat("Offset", &offset, 0.0f, 1.0f);
+			ImGui::InputFloat("Scale", &scale);
+		}
+
+		// Set data
+		mat.second->SetColorTint(colorTint);
+		mat.second->SetRoughness(roughness);
+		mat.second->SetOffset(offset);
+		mat.second->SetScale(scale);
+
+		// Pop the ID
+		ImGui::PopID();
+	}
 }

@@ -11,6 +11,8 @@ private:
 	// Shaders
 	DirectX::XMFLOAT3 colorTint;
 	float roughness;
+	float offset;
+	float scale;
 	std::shared_ptr<SimplePixelShader> pixelShader;
 	std::shared_ptr<SimpleVertexShader> vertexShader;
 
@@ -23,6 +25,8 @@ public:
 	Material(
 		DirectX::XMFLOAT3 colorTint, 
 		float roughness,
+		float offset,
+		float scale,
 		std::shared_ptr<SimplePixelShader> pixelShader,
 		std::shared_ptr<SimpleVertexShader> vertexShader
 	);
@@ -31,6 +35,8 @@ public:
 	// Getters
 	DirectX::XMFLOAT3 GetColorTint() const;
 	float GetRoughness();
+	float GetOffset();
+	float GetScale();
 	std::shared_ptr<SimplePixelShader> GetPixelShader();
 	std::shared_ptr<SimpleVertexShader> GetVertexShader();
 
@@ -38,6 +44,8 @@ public:
 	void SetColorTint(float r, float g, float b);
 	void SetColorTint(DirectX::XMFLOAT3 colorTint);
 	void SetRoughness(float roughness);
+	void SetOffset(float offset);
+	void SetScale(float scale);
 	void SetPixelShader(std::shared_ptr<SimplePixelShader> pixelShader);
 	void SetVertexShader(std::shared_ptr<SimpleVertexShader> vertexShader);
 	void AddTextureSRV(std::string key, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> value);

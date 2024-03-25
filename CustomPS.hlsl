@@ -10,6 +10,8 @@ cbuffer EntityData : register(b0)
     float roughness;
     float3 ambientTerm;
     float time;
+    float offset;
+    float scale;
     Light lights[5];
 }
 
@@ -23,8 +25,11 @@ float4 main(VertexToPixel input) : SV_TARGET
     // Normalize input normals
     input.normal = normalize(input.normal);
 
+    // Edit input UV's depending on material
+    float2 uv = (input.uv.x + (offset * time)) * scale;
+
     // Get surface color of the texture
-    float3 surfaceColor = SurfaceTexture.Sample(BasicSampler, input.uv).rgb;
+    float3 surfaceColor = SurfaceTexture.Sample(BasicSampler, uv).rgb;
 
     // Get the total color
     float3 totalColor = surfaceColor * colorTint * ambientTerm;
