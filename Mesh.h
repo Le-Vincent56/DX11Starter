@@ -29,6 +29,7 @@ public:
 		const char* fileName);
 	~Mesh();
 
+	void CalculateTangents(Vertex* verts, int numVerts, unsigned int* indices, int numIndices);
 	void CreateBuffers(Vertex* meshVertices, unsigned int numVertices, unsigned int* meshIndices, unsigned int numIndices);
 
 	// Getters

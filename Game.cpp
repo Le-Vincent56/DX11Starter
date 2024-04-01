@@ -211,49 +211,93 @@ void Game::CreateMaterials()
 	device->CreateSamplerState(&samplerDesc, sampler.GetAddressOf());
 
 	// Create ShaderResourceViews
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> patternedClaySRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodTableSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> grayRockSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneNormalsSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cushionSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cushionNormalsSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rockSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rockNormalsSRV;
 
 	// Load Textures
 	CreateWICTextureFromFile(
 		device.Get(),
 		context.Get(),
-		FixPath(L"../../Textures/patterned_clay_plaster_diff_4k.png").c_str(),
+		FixPath(L"../../Textures/cobblestone.png").c_str(),
 		0,
-		patternedClaySRV.GetAddressOf()
+		cobblestoneSRV.GetAddressOf()
 	);
 
 	CreateWICTextureFromFile(
 		device.Get(),
 		context.Get(),
-		FixPath(L"../../Textures/wood_table_001_diff_4k.png").c_str(),
+		FixPath(L"../../Textures/cobblestone_normals.png").c_str(),
 		0,
-		woodTableSRV.GetAddressOf()
+		cobblestoneNormalsSRV.GetAddressOf()
 	);
 
 	CreateWICTextureFromFile(
 		device.Get(),
 		context.Get(),
-		FixPath(L"../../Textures/gray_rocks_diff_4k.png").c_str(),
+		FixPath(L"../../Textures/cushion.png").c_str(),
 		0,
-		grayRockSRV.GetAddressOf()
+		cushionSRV.GetAddressOf()
 	);
 
-	std::shared_ptr<Material> clay = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, 0.2f, 1.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
-	clay->AddTextureSRV("SurfaceTexture", patternedClaySRV);
-	clay->AddSamplerState("BasicSampler", sampler);
-	materials.insert({ "Clay", clay });
+	CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Textures/cushion_normals.png").c_str(),
+		0,
+		cushionNormalsSRV.GetAddressOf()
+	);
 
-	std::shared_ptr<Material> wood = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, 0.0f, 2.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
-	wood->AddTextureSRV("SurfaceTexture", woodTableSRV);
-	wood->AddSamplerState("BasicSampler", sampler);
-	materials.insert({ "Wood", wood });
+	CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Textures/rock.png").c_str(),
+		0,
+		rockSRV.GetAddressOf()
+	);
 
+	CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Textures/rock_normals.png").c_str(),
+		0,
+		rockNormalsSRV.GetAddressOf()
+	);
+
+	// Create cobblestone texture
+	std::shared_ptr<Material> cobblestone = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, 0.2f, 1.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
+	cobblestone->AddTextureSRV("SurfaceTexture", cobblestoneSRV);
+	cobblestone->AddTextureSRV("NormalMap", cobblestoneNormalsSRV);
+	cobblestone->AddSamplerState("BasicSampler", sampler);
+	materials.insert({ "Cobblestone", cobblestone });
+
+	// Create cushion texture
+	std::shared_ptr<Material> cushion = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, 0.0f, 2.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
+	cushion->AddTextureSRV("SurfaceTexture", cushionSRV);
+	cushion->AddTextureSRV("NormalMap", cushionNormalsSRV);
+	cushion->AddSamplerState("BasicSampler", sampler);
+	materials.insert({ "Cushion", cushion });
+
+	// Create rock texture
 	std::shared_ptr<Material> rock = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, 0.5f, 3.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
-	rock->AddTextureSRV("SurfaceTexture", grayRockSRV);
+	rock->AddTextureSRV("SurfaceTexture", rockSRV);
+	rock->AddTextureSRV("NormalMap", rockNormalsSRV);
 	rock->AddSamplerState("BasicSampler", sampler);
 	materials.insert({ "Rock", rock });
+}
+
+void Game::LoadTexture(const wchar_t* filePath, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shaderResourceView)
+{
+	CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(filePath).c_str(),
+		0,
+		shaderResourceView.GetAddressOf()
+	);
 }
 
 // --------------------------------------------------------
@@ -265,7 +309,7 @@ void Game::CreateEntities()
 	entities.push_back(
 		std::make_shared<GameEntity>(
 			meshes[0],
-			materials["Clay"]
+			materials["Cobblestone"]
 		)
 	);
 	entities[0]->GetTransform()->SetPosition(-10.0f, 0.0f, 0.0f);
@@ -273,7 +317,7 @@ void Game::CreateEntities()
 	entities.push_back(
 		std::make_shared<GameEntity>(
 			meshes[0],
-			materials["Wood"]
+			materials["Cushion"]
 		)
 	);
 	entities[1]->GetTransform()->SetPosition(-5.0f, 0.0f, 0.0f);
@@ -289,7 +333,7 @@ void Game::CreateEntities()
 	entities.push_back(
 		std::make_shared<GameEntity>(
 			meshes[2],
-			materials["Wood"]
+			materials["Cushion"]
 		)
 	);
 	entities[3]->GetTransform()->SetPosition(5.0f, 0.0f, 0.0f);
@@ -297,7 +341,7 @@ void Game::CreateEntities()
 	entities.push_back(
 		std::make_shared<GameEntity>(
 			meshes[2],
-			materials["Clay"]
+			materials["Cobblestone"]
 		)
 	);
 	entities[4]->GetTransform()->SetPosition(10.0f, 0.0f, 0.0f);
