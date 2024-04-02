@@ -55,21 +55,23 @@ float GetPhong(Light light, float3 cameraPos, float3 pixelWorldPos, float3 surfa
     return GetSpecular(reflection, view, roughness);
 }
 
-float3 CalcDirectionalLight(Light light, float3 surfaceNormal, float3 cameraPos, float3 pixelWorldPos, float roughness)
+float3 CalcDirectionalLight(Light light, float3 surfaceNormal, float3 cameraPos, float3 pixelWorldPos, float roughness, float3 surfaceColor)
 {
     float diffuse = GetDiffuse(light, surfaceNormal);
     float phong = GetPhong(light, cameraPos, pixelWorldPos, surfaceNormal, roughness);
+    phong *= any(diffuse);
     
-    return (diffuse + phong) * light.intensity * light.color;
+    return (diffuse * surfaceColor + phong) * light.intensity * light.color;
 }
 
-float3 CalcPointLight(Light light, float3 surfaceNormal, float3 cameraPos, float3 pixelWorldPos, float roughness)
+float3 CalcPointLight(Light light, float3 surfaceNormal, float3 cameraPos, float3 pixelWorldPos, float roughness, float3 surfaceColor)
 {
     float diffuse = GetDiffuse(light, surfaceNormal);
     float phong = GetPhong(light, cameraPos, pixelWorldPos, surfaceNormal, roughness);
+    phong *= any(diffuse);
     float attenuation = GetAttenuation(light, pixelWorldPos);
     
-    return (diffuse + phong) * attenuation * light.intensity * light.color;
+    return (diffuse * surfaceColor + phong) * attenuation * light.intensity * light.color;
 }
 
 #endif

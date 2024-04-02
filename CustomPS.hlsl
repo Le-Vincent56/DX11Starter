@@ -27,7 +27,7 @@ float4 main(VertexToPixel input) : SV_TARGET
     input.normal = normalize(input.normal);
 
     // Edit input UV's depending on material
-    float2 uv = (input.uv.x + (offset * time)) * scale;
+    //float2 uv = (input.uv.x + (offset * time)) * scale;
     
     // Sample and unpack normals
     float3 unpackedNormal = NormalMap.Sample(BasicSampler, input.uv).rgb * 2 - 1;
@@ -47,10 +47,11 @@ float4 main(VertexToPixel input) : SV_TARGET
     input.normal = mul(unpackedNormal, TBN);
 
     // Get surface color of the texture
-    float3 surfaceColor = SurfaceTexture.Sample(BasicSampler, uv).rgb;
+    float3 surfaceColor = SurfaceTexture.Sample(BasicSampler, input.uv).rgb;
+    surfaceColor *= colorTint;
 
     // Get the total color
-    float3 totalColor = surfaceColor * colorTint * ambientTerm;
+    float3 totalColor = surfaceColor * ambientTerm;
 
     // Normalize lighting
     for (int i = 0; i < 5; i++)
@@ -63,12 +64,12 @@ float4 main(VertexToPixel input) : SV_TARGET
         {
             // Directional Light
             case LIGHT_TYPE_DIRECTIONAL:
-                totalColor += CalcDirectionalLight(light, input.normal, cameraPos, input.worldPosition, roughness);
+                totalColor += CalcDirectionalLight(light, input.normal, cameraPos, input.worldPosition, roughness, surfaceColor);
                 break;
             
             // Point Light
             case LIGHT_TYPE_POINT:
-                totalColor += CalcPointLight(light, input.normal, cameraPos, input.worldPosition, roughness);
+                totalColor += CalcPointLight(light, input.normal, cameraPos, input.worldPosition, roughness, surfaceColor);
                 break;
             
             // Spot Light
