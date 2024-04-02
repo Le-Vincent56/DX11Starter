@@ -80,8 +80,8 @@ void Game::Init()
 	// Create geometry
 	CreateGeometry();
 
-	// Generate materials
-	CreateMaterials();
+	// Create assets
+	CreateAssets();
 	
 	// Create Entities
 	CreateEntities();
@@ -153,6 +153,34 @@ void Game::Init()
 	ImGui::StyleColorsDark();
 }
 
+void Game::CreateAssets()
+{
+	// Create sampler
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
+	D3D11_SAMPLER_DESC samplerDesc = {};
+
+	// Define how to handle UV's outside of the 0-1 range
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+
+	// Set a filter
+	samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+	samplerDesc.MaxAnisotropy = 8; // Range between 1-16, higher is better but slower
+
+	// Enable mipmapping
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	// Store the sampler description into the sampler
+	device->CreateSamplerState(&samplerDesc, sampler.GetAddressOf());
+
+	// Create materials
+	CreateMaterials(sampler);
+
+	// Create skybox
+	gameRenderer->CreateSkybox(sampler, meshes[2]);
+}
+
 // --------------------------------------------------------
 // Creates the geometry we're going to draw - a single triangle for now
 // --------------------------------------------------------
@@ -189,27 +217,8 @@ void Game::CreateGeometry()
 // --------------------------------------------------------
 // Create materials
 // --------------------------------------------------------
-void Game::CreateMaterials()
+void Game::CreateMaterials(Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler)
 {
-	// Create sampler
-	Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
-	D3D11_SAMPLER_DESC samplerDesc = {};
-
-	// Define how to handle UV's outside of the 0-1 range
-	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-
-	// Set a filter
-	samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
-	samplerDesc.MaxAnisotropy = 8; // Range between 1-16, higher is better but slower
-
-	// Enable mipmapping
-	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-	// Store the sampler description into the sampler
-	device->CreateSamplerState(&samplerDesc, sampler.GetAddressOf());
-
 	// Create ShaderResourceViews
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> barkSRV;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> barkNormalsSRV;
@@ -312,17 +321,6 @@ void Game::CreateMaterials()
 	rock->AddTextureSRV("NormalMap", rockNormalsSRV);
 	rock->AddSamplerState("BasicSampler", sampler);
 	materials.insert({ "Rock", rock });
-}
-
-void Game::LoadTexture(const wchar_t* filePath, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shaderResourceView)
-{
-	CreateWICTextureFromFile(
-		device.Get(),
-		context.Get(),
-		FixPath(filePath).c_str(),
-		0,
-		shaderResourceView.GetAddressOf()
-	);
 }
 
 // --------------------------------------------------------

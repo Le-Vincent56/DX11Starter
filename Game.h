@@ -33,9 +33,9 @@ public:
 private:
 
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
+	void CreateAssets();
 	void CreateGeometry();
-	void CreateMaterials();
-	void LoadTexture(const wchar_t* filePath, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shaderResourceView);
+	void CreateMaterials(Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler);
 	void CreateEntities();
 	void RefreshUI(const float& deltaTime);
 	void BuildUI();

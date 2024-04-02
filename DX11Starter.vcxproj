@@ -162,6 +162,7 @@
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="GameRenderer.cpp" />
     <ClCompile Include="SimpleShader.cpp" />
+    <ClCompile Include="Skybox.cpp" />
     <ClCompile Include="Transform.cpp" />
     <ClCompile Include="UserInput.cpp" />
   </ItemGroup>
@@ -187,6 +188,7 @@
     <ClInclude Include="Input.h" />
     <ClInclude Include="GameRenderer.h" />
     <ClInclude Include="SimpleShader.h" />
+    <ClInclude Include="Skybox.h" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="UserInput.h" />
     <ClInclude Include="Vertex.h" />
@@ -204,6 +206,8 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
     </FxCompile>
+    <FxCompile Include="SkyPixelShader.hlsl" />
+    <FxCompile Include="SkyVertexShader.hlsl" />
     <FxCompile Include="VertexShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>

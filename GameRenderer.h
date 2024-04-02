@@ -5,6 +5,7 @@
 #include "GameEntity.h"
 #include "Camera.h"
 #include "LightManager.h"
+#include "Skybox.h"
 
 class GameRenderer
 {
@@ -28,6 +29,9 @@ private:
 
 	// Light manager
 	std::shared_ptr<LightManager> lightManager;
+
+	// Skybox
+	std::shared_ptr<Skybox> skybox;
 
 	// Variables
 	float bgColor[4] = { 0.4f, 0.6f, 0.75f, 1.0f };
@@ -57,6 +61,7 @@ public:
 	// Initialize Functions
 	void Init();
 	void LoadShaders();
+	void CreateSkybox(Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler, std::shared_ptr<Mesh> skyMesh);
 
 	// Update Functions
 	void SelectRenderableEntities(std::vector<std::shared_ptr<GameEntity>>& gameEntities);

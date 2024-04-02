@@ -1,13 +1,5 @@
 #include "ShaderStructs.hlsli"
 
-struct VertexShaderInput
-{ 
-	float3 localPosition	: POSITION;     // XYZ position
-	float3 normal			: NORMAL;       // Normal
-    float3 tangent			: TANGENT;
-    float2 uv				: TEXCOORD;		// UV coordinates
-};
-
 cbuffer EntityData : register(b0)
 {
 	matrix world;

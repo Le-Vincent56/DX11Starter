@@ -97,6 +97,22 @@ void GameRenderer::LoadShaders()
 	);
 }
 
+void GameRenderer::CreateSkybox(Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler, std::shared_ptr<Mesh> skyMesh)
+{
+	skybox = std::make_shared<Skybox>(
+		FixPath(L"../../Textures/Skybox/right.png").c_str(),
+		FixPath(L"../../Textures/Skybox/left.png").c_str(),
+		FixPath(L"../../Textures/Skybox/up.png").c_str(),
+		FixPath(L"../../Textures/Skybox/down.png").c_str(),
+		FixPath(L"../../Textures/Skybox/front.png").c_str(),
+		FixPath(L"../../Textures/Skybox/back.png").c_str(),
+		this->device,
+		this->context,
+		sampler,
+		skyMesh
+	);
+}
+
 // --------------------------------------------------------
 // Compare the materials of two entities
 // --------------------------------------------------------
@@ -182,6 +198,9 @@ void GameRenderer::Draw(bool vsync, bool deviceSupportsTearing, BOOL isFullscree
 		// Render the entity
 		renderEntities[i]->Draw();
 	}
+
+	// Draw the skybox last
+	skybox->Draw(camera);
 
 	// Render UI
 	ImGui::Render(); // Turns this frame’s UI into renderable triangles
