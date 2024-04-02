@@ -211,6 +211,8 @@ void Game::CreateMaterials()
 	device->CreateSamplerState(&samplerDesc, sampler.GetAddressOf());
 
 	// Create ShaderResourceViews
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> barkSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> barkNormalsSRV;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneSRV;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneNormalsSRV;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cushionSRV;
@@ -219,6 +221,22 @@ void Game::CreateMaterials()
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rockNormalsSRV;
 
 	// Load Textures
+	CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Textures/bark.png").c_str(),
+		0,
+		barkSRV.GetAddressOf()
+	);
+
+	CreateWICTextureFromFile(
+		device.Get(),
+		context.Get(),
+		FixPath(L"../../Textures/bark_normals.png").c_str(),
+		0,
+		barkNormalsSRV.GetAddressOf()
+	);
+
 	CreateWICTextureFromFile(
 		device.Get(),
 		context.Get(),
@@ -267,6 +285,13 @@ void Game::CreateMaterials()
 		rockNormalsSRV.GetAddressOf()
 	);
 
+	// Create bark texture
+	std::shared_ptr<Material> bark = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, 0.2f, 1.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
+	bark->AddTextureSRV("SurfaceTexture", barkSRV);
+	bark->AddTextureSRV("NormalMap", barkNormalsSRV);
+	bark->AddSamplerState("BasicSampler", sampler);
+	materials.insert({ "Bark", bark });
+
 	// Create cobblestone texture
 	std::shared_ptr<Material> cobblestone = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, 0.2f, 1.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
 	cobblestone->AddTextureSRV("SurfaceTexture", cobblestoneSRV);
@@ -309,7 +334,7 @@ void Game::CreateEntities()
 	entities.push_back(
 		std::make_shared<GameEntity>(
 			meshes[0],
-			materials["Cobblestone"]
+			materials["Bark"]
 		)
 	);
 	entities[0]->GetTransform()->SetPosition(-10.0f, 0.0f, 0.0f);
