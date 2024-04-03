@@ -34,7 +34,7 @@ private:
 	std::shared_ptr<Skybox> skybox;
 
 	// Variables
-	float bgColor[4] = { 0.4f, 0.6f, 0.75f, 1.0f };
+	float bgColor[4] = { 0.376f, 0.667f, 0.8f, 1.0f };
 	float totalTime = 0;
 
 	// Helper functions

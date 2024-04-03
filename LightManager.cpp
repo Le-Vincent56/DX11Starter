@@ -45,21 +45,21 @@ void LightManager::Init()
 	Light light1;
 	light1.SetType(LIGHT_TYPE_DIRECTIONAL);
 	light1.SetDirection(XMFLOAT3(1.0f, 0.0f, 0.0f));
-	light1.SetColor(XMFLOAT3(1.0, 0.0f, 0.0f));
+	light1.SetColor(XMFLOAT3(1.0f, 1.0f, 1.0f));
 	light1.SetIntensity(0.3f);
 
 	// Create the second light
 	Light light2;
 	light2.SetType(LIGHT_TYPE_DIRECTIONAL);
 	light2.SetDirection(XMFLOAT3(-1.0f, 0.0f, 0.0f));
-	light2.SetColor(XMFLOAT3(0.0f, 1.0f, 0.0f));
+	light2.SetColor(XMFLOAT3(1.0f, 1.0f, 1.0f));
 	light2.SetIntensity(0.6f);
 
 	// Create the third light
 	Light light3;
 	light3.SetType(LIGHT_TYPE_DIRECTIONAL);
 	light3.SetDirection(XMFLOAT3(0.0f, -1.0f, 0.0f));
-	light3.SetColor(XMFLOAT3(0.0f, 0.0f, 1.0f));
+	light3.SetColor(XMFLOAT3(1.0f, 1.0f, 1.0f));
 	light3.SetIntensity(0.5f);
 
 	// Create a fourth light
@@ -68,7 +68,7 @@ void LightManager::Init()
 	light4.SetDirection(XMFLOAT3(0.0f, -1.0f, 0.0f));
 	light4.SetRange(24.0f);
 	light4.SetPosition(XMFLOAT3(0.0f, 10.0f, 0.0f));
-	light4.SetColor(XMFLOAT3(0.2f, 1.0f, 0.2f));
+	light4.SetColor(XMFLOAT3(1.0f, 1.0f, 1.0f));
 	light4.SetIntensity(0.7f);
 
 	Light light5;
@@ -76,7 +76,7 @@ void LightManager::Init()
 	light5.SetDirection(XMFLOAT3(0.5f, 0.5f, 0.0f));
 	light5.SetRange(10.0f);
 	light5.SetPosition(XMFLOAT3(-3.5f, -3.5f, 0.0f));
-	light5.SetColor(XMFLOAT3(1.0f, 0.2f, 0.2f));
+	light5.SetColor(XMFLOAT3(1.0f, 1.0f, 1.0f));
 	light5.SetIntensity(0.7f);
 
 	// Add the lights
