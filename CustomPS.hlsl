@@ -1,8 +1,10 @@
 #include "ShaderStructs.hlsli"
 #include "Lights.hlsli"
 
-Texture2D SurfaceTexture : register(t0);
+Texture2D Albedo : register(t0);
 Texture2D NormalMap : register(t1);
+Texture2D RoughnessMap : register(t2);
+Texture2D MetalnessMap : register(t3);
 SamplerState BasicSampler : register(s0);
 
 cbuffer EntityData : register(b0)
@@ -47,16 +49,27 @@ float4 main(VertexToPixel input) : SV_TARGET
     input.normal = mul(unpackedNormal, TBN);
 
     // Get surface color of the texture
-    float3 surfaceColor = SurfaceTexture.Sample(BasicSampler, input.uv).rgb;
+    float3 surfaceColor = pow(Albedo.Sample(BasicSampler, input.uv).rgb, 2.2f);
     surfaceColor *= colorTint;
 
+    // Sample roughness
+    float roughness = RoughnessMap.Sample(BasicSampler, input.uv).r;
+
+    // Sample metalness
+    float metalness = MetalnessMap.Sample(BasicSampler, input.uv).r;
+
+    // Calculate specular color
+    float3 specularColor = lerp(F0_NON_METAL, surfaceColor.rgb, metalness);
+
     // Get the total color
-    float3 totalColor = surfaceColor * ambientTerm;
+    float3 totalColor = surfaceColor;
 
     // Normalize lighting
     for (int i = 0; i < 5; i++)
     {
         Light light = lights[i];
+
+        // Normalize the light direction
         light.direction = normalize(light.direction);
 
         // Add directional light
@@ -64,12 +77,14 @@ float4 main(VertexToPixel input) : SV_TARGET
         {
             // Directional Light
             case LIGHT_TYPE_DIRECTIONAL:
-                totalColor += CalcDirectionalLight(light, input.normal, cameraPos, input.worldPosition, roughness, surfaceColor);
+                totalColor += CalcDirectionalLight(light, input.normal, cameraPos, input.worldPosition, 
+                    roughness, metalness, surfaceColor, specularColor);
                 break;
             
             // Point Light
             case LIGHT_TYPE_POINT:
-                totalColor += CalcPointLight(light, input.normal, cameraPos, input.worldPosition, roughness, surfaceColor);
+                totalColor += CalcPointLight(light, input.normal, cameraPos, input.worldPosition, 
+                    roughness, metalness, surfaceColor, specularColor);
                 break;
             
             // Spot Light
@@ -80,5 +95,5 @@ float4 main(VertexToPixel input) : SV_TARGET
         
     }
 
-    return float4(totalColor, 1);
+    return float4(pow(totalColor, 1.0f / 2.2f), 1);
 }

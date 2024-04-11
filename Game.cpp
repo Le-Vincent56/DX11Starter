@@ -220,107 +220,201 @@ void Game::CreateGeometry()
 void Game::CreateMaterials(Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler)
 {
 	// Create ShaderResourceViews
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> barkSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> barkNormalsSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneNormalsSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cushionSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cushionNormalsSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rockSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rockNormalsSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> marbleAlbedoSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> marbleNormalSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> marbleRoughnessSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> marbleMetalnessSRV;
 
-	// Load Textures
-	CreateWICTextureFromFile(
-		device.Get(),
-		context.Get(),
-		FixPath(L"../../Textures/bark.png").c_str(),
-		0,
-		barkSRV.GetAddressOf()
-	);
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> roofingTileAlbedoSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> roofingTileNormalSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> roofingTileRoughnessSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> roofingTileMetalnessSRV;
 
-	CreateWICTextureFromFile(
-		device.Get(),
-		context.Get(),
-		FixPath(L"../../Textures/bark_normals.png").c_str(),
-		0,
-		barkNormalsSRV.GetAddressOf()
-	);
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratchedAlbedoSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratchedNormalSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratchedRoughnessSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratchedMetalnessSRV;
 
-	CreateWICTextureFromFile(
-		device.Get(),
-		context.Get(),
-		FixPath(L"../../Textures/cobblestone.png").c_str(),
-		0,
-		cobblestoneSRV.GetAddressOf()
-	);
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> steelAlbedoSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> steelNormalSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> steelRoughnessSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> steelMetalnessSRV;
 
-	CreateWICTextureFromFile(
-		device.Get(),
-		context.Get(),
-		FixPath(L"../../Textures/cobblestone_normals.png").c_str(),
-		0,
-		cobblestoneNormalsSRV.GetAddressOf()
-	);
+	// Load Marble
+	{
+		CreateWICTextureFromFile(
+			device.Get(),
+			context.Get(),
+			FixPath(L"../../Textures/Marble_Albedo.png").c_str(),
+			0,
+			marbleAlbedoSRV.GetAddressOf()
+		);
 
-	CreateWICTextureFromFile(
-		device.Get(),
-		context.Get(),
-		FixPath(L"../../Textures/cushion.png").c_str(),
-		0,
-		cushionSRV.GetAddressOf()
-	);
+		CreateWICTextureFromFile(
+			device.Get(),
+			context.Get(),
+			FixPath(L"../../Textures/Marble_Normal.png").c_str(),
+			0,
+			marbleNormalSRV.GetAddressOf()
+		);
 
-	CreateWICTextureFromFile(
-		device.Get(),
-		context.Get(),
-		FixPath(L"../../Textures/cushion_normals.png").c_str(),
-		0,
-		cushionNormalsSRV.GetAddressOf()
-	);
+		CreateWICTextureFromFile(
+			device.Get(),
+			context.Get(),
+			FixPath(L"../../Textures/Marble_Roughness.png").c_str(),
+			0,
+			marbleRoughnessSRV.GetAddressOf()
+		);
 
-	CreateWICTextureFromFile(
-		device.Get(),
-		context.Get(),
-		FixPath(L"../../Textures/rock.png").c_str(),
-		0,
-		rockSRV.GetAddressOf()
-	);
+		CreateWICTextureFromFile(
+			device.Get(),
+			context.Get(),
+			FixPath(L"../../Textures/Marble_Metal.png").c_str(),
+			0,
+			marbleMetalnessSRV.GetAddressOf()
+		);
+	}
 
-	CreateWICTextureFromFile(
-		device.Get(),
-		context.Get(),
-		FixPath(L"../../Textures/rock_normals.png").c_str(),
-		0,
-		rockNormalsSRV.GetAddressOf()
-	);
+	// Load Roofing Tile
+	{
+		CreateWICTextureFromFile(
+			device.Get(),
+			context.Get(),
+			FixPath(L"../../Textures/RoofingTile_Albedo.png").c_str(),
+			0,
+			roofingTileAlbedoSRV.GetAddressOf()
+		);
 
-	// Create bark texture
-	std::shared_ptr<Material> bark = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, 0.2f, 1.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
-	bark->AddTextureSRV("SurfaceTexture", barkSRV);
-	bark->AddTextureSRV("NormalMap", barkNormalsSRV);
-	bark->AddSamplerState("BasicSampler", sampler);
-	materials.insert({ "Bark", bark });
+		CreateWICTextureFromFile(
+			device.Get(),
+			context.Get(),
+			FixPath(L"../../Textures/RoofingTile_Normal.png").c_str(),
+			0,
+			roofingTileNormalSRV.GetAddressOf()
+		);
 
-	// Create cobblestone texture
-	std::shared_ptr<Material> cobblestone = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, 0.2f, 1.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
-	cobblestone->AddTextureSRV("SurfaceTexture", cobblestoneSRV);
-	cobblestone->AddTextureSRV("NormalMap", cobblestoneNormalsSRV);
-	cobblestone->AddSamplerState("BasicSampler", sampler);
-	materials.insert({ "Cobblestone", cobblestone });
+		CreateWICTextureFromFile(
+			device.Get(),
+			context.Get(),
+			FixPath(L"../../Textures/RoofingTile_Roughness.png").c_str(),
+			0,
+			roofingTileRoughnessSRV.GetAddressOf()
+		);
 
-	// Create cushion texture
-	std::shared_ptr<Material> cushion = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, 0.0f, 2.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
-	cushion->AddTextureSRV("SurfaceTexture", cushionSRV);
-	cushion->AddTextureSRV("NormalMap", cushionNormalsSRV);
-	cushion->AddSamplerState("BasicSampler", sampler);
-	materials.insert({ "Cushion", cushion });
+		CreateWICTextureFromFile(
+			device.Get(),
+			context.Get(),
+			FixPath(L"../../Textures/RoofingTile_Metal.png").c_str(),
+			0,
+			roofingTileMetalnessSRV.GetAddressOf()
+		);
+	}
 
-	// Create rock texture
-	std::shared_ptr<Material> rock = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, 0.5f, 3.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
-	rock->AddTextureSRV("SurfaceTexture", rockSRV);
-	rock->AddTextureSRV("NormalMap", rockNormalsSRV);
-	rock->AddSamplerState("BasicSampler", sampler);
-	materials.insert({ "Rock", rock });
+	// Load Scratched
+	{
+		CreateWICTextureFromFile(
+			device.Get(),
+			context.Get(),
+			FixPath(L"../../Textures/Scratched_Albedo.png").c_str(),
+			0,
+			scratchedAlbedoSRV.GetAddressOf()
+		);
+
+		CreateWICTextureFromFile(
+			device.Get(),
+			context.Get(),
+			FixPath(L"../../Textures/Scratched_Normal.png").c_str(),
+			0,
+			scratchedNormalSRV.GetAddressOf()
+		);
+
+		CreateWICTextureFromFile(
+			device.Get(),
+			context.Get(),
+			FixPath(L"../../Textures/Scratched_Roughness.png").c_str(),
+			0,
+			scratchedRoughnessSRV.GetAddressOf()
+		);
+
+		CreateWICTextureFromFile(
+			device.Get(),
+			context.Get(),
+			FixPath(L"../../Textures/Scratched_Metal.png").c_str(),
+			0,
+			scratchedMetalnessSRV.GetAddressOf()
+		);
+	}
+
+	// Load Steel
+	{
+		CreateWICTextureFromFile(
+			device.Get(),
+			context.Get(),
+			FixPath(L"../../Textures/Steel_Albedo.png").c_str(),
+			0,
+			steelAlbedoSRV.GetAddressOf()
+		);
+
+		CreateWICTextureFromFile(
+			device.Get(),
+			context.Get(),
+			FixPath(L"../../Textures/Steel_Normal.png").c_str(),
+			0,
+			steelNormalSRV.GetAddressOf()
+		);
+
+		CreateWICTextureFromFile(
+			device.Get(),
+			context.Get(),
+			FixPath(L"../../Textures/Steel_Roughness.png").c_str(),
+			0,
+			steelRoughnessSRV.GetAddressOf()
+		);
+
+		CreateWICTextureFromFile(
+			device.Get(),
+			context.Get(),
+			FixPath(L"../../Textures/Steel_Metal.png").c_str(),
+			0,
+			steelMetalnessSRV.GetAddressOf()
+		);
+	}
+
+	// Create marble texture
+	std::shared_ptr<Material> marble = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, 0.2f, 1.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
+	marble->AddTextureSRV("Albedo", marbleAlbedoSRV);
+	marble->AddTextureSRV("NormalMap", marbleNormalSRV);
+	marble->AddTextureSRV("RoughnessMap", marbleRoughnessSRV);
+	marble->AddTextureSRV("MetalnessMap", marbleMetalnessSRV);
+	marble->AddSamplerState("BasicSampler", sampler);
+	materials.insert({ "Marble", marble });
+
+	// Create roofing tile texture
+	std::shared_ptr<Material> roofingTile = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, 0.2f, 1.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
+	roofingTile->AddTextureSRV("Albedo", roofingTileAlbedoSRV);
+	roofingTile->AddTextureSRV("NormalMap", roofingTileNormalSRV);
+	roofingTile->AddTextureSRV("RoughnessMap", roofingTileRoughnessSRV);
+	roofingTile->AddTextureSRV("MetalnessMap", roofingTileMetalnessSRV);
+	roofingTile->AddSamplerState("BasicSampler", sampler);
+	materials.insert({ "Roofing Tile", roofingTile });
+
+	// Create scratched texture
+	std::shared_ptr<Material> scratched = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, 0.0f, 0.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
+	scratched->AddTextureSRV("Albedo", scratchedAlbedoSRV);
+	scratched->AddTextureSRV("NormalMap", scratchedNormalSRV);
+	scratched->AddTextureSRV("RoughnessMap", scratchedRoughnessSRV);
+	scratched->AddTextureSRV("MetalnessMap", scratchedMetalnessSRV);
+	scratched->AddSamplerState("BasicSampler", sampler);
+	materials.insert({ "Scratched", scratched });
+
+	// Create steel texture
+	std::shared_ptr<Material> steel = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, 0.0f, 2.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
+	steel->AddTextureSRV("Albedo", steelAlbedoSRV);
+	steel->AddTextureSRV("NormalMap", steelNormalSRV);
+	steel->AddTextureSRV("RoughnessMap", steelRoughnessSRV);
+	steel->AddTextureSRV("MetalnessMap", steelMetalnessSRV);
+	steel->AddSamplerState("BasicSampler", sampler);
+	materials.insert({ "Steel", steel });
 }
 
 // --------------------------------------------------------
@@ -332,7 +426,7 @@ void Game::CreateEntities()
 	entities.push_back(
 		std::make_shared<GameEntity>(
 			meshes[0],
-			materials["Bark"]
+			materials["Steel"]
 		)
 	);
 	entities[0]->GetTransform()->SetPosition(-10.0f, 0.0f, 0.0f);
@@ -340,7 +434,7 @@ void Game::CreateEntities()
 	entities.push_back(
 		std::make_shared<GameEntity>(
 			meshes[0],
-			materials["Cushion"]
+			materials["Scratched"]
 		)
 	);
 	entities[1]->GetTransform()->SetPosition(-5.0f, 0.0f, 0.0f);
@@ -348,7 +442,7 @@ void Game::CreateEntities()
 	entities.push_back(
 		std::make_shared<GameEntity>(
 			meshes[1],
-			materials["Rock"]
+			materials["Marble"]
 		)
 	);
 	entities[2]->GetTransform()->SetPosition(0.0f, 0.0f, 0.0f);
@@ -356,7 +450,7 @@ void Game::CreateEntities()
 	entities.push_back(
 		std::make_shared<GameEntity>(
 			meshes[2],
-			materials["Cushion"]
+			materials["Roofing Tile"]
 		)
 	);
 	entities[3]->GetTransform()->SetPosition(5.0f, 0.0f, 0.0f);
@@ -364,7 +458,7 @@ void Game::CreateEntities()
 	entities.push_back(
 		std::make_shared<GameEntity>(
 			meshes[2],
-			materials["Cobblestone"]
+			materials["Steel"]
 		)
 	);
 	entities[4]->GetTransform()->SetPosition(10.0f, 0.0f, 0.0f);
