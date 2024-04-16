@@ -240,6 +240,11 @@ void Game::CreateMaterials(Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler)
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> steelRoughnessSRV;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> steelMetalnessSRV;
 
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ironAlbedoSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ironNormalSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ironRoughnessSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ironMetalnessSRV;
+
 	// Load Marble
 	{
 		CreateWICTextureFromFile(
@@ -380,6 +385,41 @@ void Game::CreateMaterials(Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler)
 		);
 	}
 
+	// Load Iron
+	{
+		CreateWICTextureFromFile(
+			device.Get(),
+			context.Get(),
+			FixPath(L"../../Textures/Iron_Albedo.png").c_str(),
+			0,
+			ironAlbedoSRV.GetAddressOf()
+		);
+
+		CreateWICTextureFromFile(
+			device.Get(),
+			context.Get(),
+			FixPath(L"../../Textures/Iron_Normal.png").c_str(),
+			0,
+			ironNormalSRV.GetAddressOf()
+		);
+
+		CreateWICTextureFromFile(
+			device.Get(),
+			context.Get(),
+			FixPath(L"../../Textures/Iron_Roughness.png").c_str(),
+			0,
+			ironRoughnessSRV.GetAddressOf()
+		);
+
+		CreateWICTextureFromFile(
+			device.Get(),
+			context.Get(),
+			FixPath(L"../../Textures/Iron_Metal.png").c_str(),
+			0,
+			ironMetalnessSRV.GetAddressOf()
+		);
+	}
+
 	// Create marble texture
 	std::shared_ptr<Material> marble = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, 0.2f, 1.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
 	marble->AddTextureSRV("Albedo", marbleAlbedoSRV);
@@ -415,6 +455,15 @@ void Game::CreateMaterials(Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler)
 	steel->AddTextureSRV("MetalnessMap", steelMetalnessSRV);
 	steel->AddSamplerState("BasicSampler", sampler);
 	materials.insert({ "Steel", steel });
+
+	// Create iron texture
+	std::shared_ptr<Material> iron = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, 0.0f, 2.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
+	iron->AddTextureSRV("Albedo", ironAlbedoSRV);
+	iron->AddTextureSRV("NormalMap", ironNormalSRV);
+	iron->AddTextureSRV("RoughnessMap", ironRoughnessSRV);
+	iron->AddTextureSRV("MetalnessMap", ironMetalnessSRV);
+	iron->AddSamplerState("BasicSampler", sampler);
+	materials.insert({ "Iron", iron });
 }
 
 // --------------------------------------------------------
@@ -441,7 +490,7 @@ void Game::CreateEntities()
 
 	entities.push_back(
 		std::make_shared<GameEntity>(
-			meshes[1],
+			meshes[0],
 			materials["Marble"]
 		)
 	);
@@ -449,7 +498,7 @@ void Game::CreateEntities()
 
 	entities.push_back(
 		std::make_shared<GameEntity>(
-			meshes[2],
+			meshes[0],
 			materials["Roofing Tile"]
 		)
 	);
@@ -457,8 +506,8 @@ void Game::CreateEntities()
 
 	entities.push_back(
 		std::make_shared<GameEntity>(
-			meshes[2],
-			materials["Steel"]
+			meshes[0],
+			materials["Iron"]
 		)
 	);
 	entities[4]->GetTransform()->SetPosition(10.0f, 0.0f, 0.0f);
