@@ -267,7 +267,7 @@ void GameRenderer::RenderShadows()
 		shadowShader->CopyAllBufferData();
 
 		// Draw meshes directly
-		//e->GetMesh()->Draw();
+		e->GetMesh()->Draw();
 	}
 
 	// Reset pipeline
