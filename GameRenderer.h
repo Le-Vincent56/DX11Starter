@@ -23,6 +23,7 @@ private:
 	// Shaders
 	std::shared_ptr<SimplePixelShader> pixelShader;
 	std::shared_ptr<SimpleVertexShader> vertexShader;
+	std::shared_ptr<SimpleVertexShader> shadowShader;
 
 	// Entities
 	std::vector<std::shared_ptr<GameEntity>> renderEntities;
@@ -33,9 +34,18 @@ private:
 	// Skybox
 	std::shared_ptr<Skybox> skybox;
 
+	// Shadows
+	int shadowMapResolution = 1024;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> shadowDSV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shadowSRV;
+	DirectX::XMFLOAT4X4 lightViewMatrix;
+	DirectX::XMFLOAT4X4 lightProjectionMatrix;
+
 	// Variables
 	float bgColor[4] = { 0.376f, 0.667f, 0.8f, 1.0f };
 	float totalTime = 0;
+	int windowWidth;
+	int windowHeight;
 
 	// Helper functions
 	static bool CompareEntityMaterials(const std::shared_ptr<GameEntity>& entity1, const std::shared_ptr<GameEntity>& entity2);
@@ -43,6 +53,7 @@ private:
 
 public:
 	GameRenderer(
+		int windowWidth, int windowHeight,
 		Microsoft::WRL::ComPtr<IDXGISwapChain> _swapChain,
 		Microsoft::WRL::ComPtr<ID3D11Device> _device,
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext>	_context,
@@ -57,15 +68,18 @@ public:
 	std::shared_ptr<SimpleVertexShader> GetVertexShader();
 	std::vector<std::shared_ptr<GameEntity>> GetRenderedEntities();
 	std::shared_ptr<LightManager> GetLightManager();
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetShadowSRV();
 
 	// Initialize Functions
 	void Init();
 	void LoadShaders();
 	void CreateSkybox(Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler, std::shared_ptr<Mesh> skyMesh);
+	void InitShadows();
 
 	// Update Functions
 	void SelectRenderableEntities(std::vector<std::shared_ptr<GameEntity>>& gameEntities);
 	void Update(float& totalTime, std::vector<std::shared_ptr<GameEntity>>& gameEntities);
+	void RenderShadows();
 
 	// Draw Functions
 	void Draw(bool vsync, bool deviceSupportsTearing, BOOL isFullscreen, 

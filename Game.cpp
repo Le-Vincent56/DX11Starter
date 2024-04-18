@@ -42,6 +42,7 @@ Game::Game(HINSTANCE hInstance)
 #endif
 	activeCamera = 0;
 	gameRenderer = nullptr;
+	moveTime = 0.0f;
 }
 
 // --------------------------------------------------------
@@ -71,8 +72,11 @@ Game::~Game()
 void Game::Init()
 {
 	// Create a renderer
-	gameRenderer = std::make_shared<GameRenderer>(this->swapChain,
-		this->device, this->context, this->backBufferRTV, this->depthBufferDSV);
+	gameRenderer = std::make_shared<GameRenderer>(
+		this->windowWidth, this->windowHeight,
+		this->swapChain, this->device, this->context, 
+		this->backBufferRTV, this->depthBufferDSV
+	);
 
 	// Initialize the renderer - initializes shaders as well
 	gameRenderer->Init();
@@ -244,6 +248,11 @@ void Game::CreateMaterials(Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler)
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ironNormalSRV;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ironRoughnessSRV;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ironMetalnessSRV;
+
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> pavementAlbedoSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> pavementNormalSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> pavementRoughnessSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> pavementMetalnessSRV;
 
 	// Load Marble
 	{
@@ -420,6 +429,41 @@ void Game::CreateMaterials(Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler)
 		);
 	}
 
+	// Load pavement
+	{
+		CreateWICTextureFromFile(
+			device.Get(),
+			context.Get(),
+			FixPath(L"../../Textures/Pavement_Albedo.png").c_str(),
+			0,
+			pavementAlbedoSRV.GetAddressOf()
+		);
+
+		CreateWICTextureFromFile(
+			device.Get(),
+			context.Get(),
+			FixPath(L"../../Textures/Pavement_Normal.png").c_str(),
+			0,
+			pavementNormalSRV.GetAddressOf()
+		);
+
+		CreateWICTextureFromFile(
+			device.Get(),
+			context.Get(),
+			FixPath(L"../../Textures/Pavement_Roughness.png").c_str(),
+			0,
+			pavementRoughnessSRV.GetAddressOf()
+		);
+
+		CreateWICTextureFromFile(
+			device.Get(),
+			context.Get(),
+			FixPath(L"../../Textures/Pavement_Metal.png").c_str(),
+			0,
+			pavementMetalnessSRV.GetAddressOf()
+		);
+	}
+
 	// Create marble texture
 	std::shared_ptr<Material> marble = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, 0.2f, 1.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
 	marble->AddTextureSRV("Albedo", marbleAlbedoSRV);
@@ -464,6 +508,15 @@ void Game::CreateMaterials(Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler)
 	iron->AddTextureSRV("MetalnessMap", ironMetalnessSRV);
 	iron->AddSamplerState("BasicSampler", sampler);
 	materials.insert({ "Iron", iron });
+
+	// Create pavement texture
+	std::shared_ptr<Material> pavement = std::make_shared<Material>(XMFLOAT3(1, 1, 1), 0.0f, 0.0f, 1.0f, gameRenderer->GetPixelShader(), gameRenderer->GetVertexShader());
+	pavement->AddTextureSRV("Albedo", pavementAlbedoSRV);
+	pavement->AddTextureSRV("NormalMap", pavementNormalSRV);
+	pavement->AddTextureSRV("RoughnessMap", pavementRoughnessSRV);
+	pavement->AddTextureSRV("MetalnessMap", pavementMetalnessSRV);
+	pavement->AddSamplerState("BasicSampler", sampler);
+	materials.insert({ "Pavement", pavement });
 }
 
 // --------------------------------------------------------
@@ -498,7 +551,7 @@ void Game::CreateEntities()
 
 	entities.push_back(
 		std::make_shared<GameEntity>(
-			meshes[0],
+			meshes[1],
 			materials["Roofing Tile"]
 		)
 	);
@@ -506,11 +559,20 @@ void Game::CreateEntities()
 
 	entities.push_back(
 		std::make_shared<GameEntity>(
-			meshes[0],
+			meshes[2],
 			materials["Iron"]
 		)
 	);
 	entities[4]->GetTransform()->SetPosition(10.0f, 0.0f, 0.0f);
+
+	entities.push_back(
+		std::make_shared<GameEntity>(
+			meshes[2],
+			materials["Pavement"]
+		)
+	);
+	entities[5]->GetTransform()->SetPosition(0.0f, -5.0f, 0.0f);
+	entities[5]->GetTransform()->SetScale(20.0f, 0.2f, 20.0f);
 }
 
 // --------------------------------------------------------
@@ -580,6 +642,10 @@ void Game::BuildUI()
 		ImGui::SameLine();
 		if (ImGui::Button("Materials"))
 			currentTab = 7;
+
+		ImGui::SameLine();
+		if (ImGui::Button("Shadows"))
+			currentTab = 8;
 	}
 
 	// Create a small separator
@@ -623,6 +689,10 @@ void Game::BuildUI()
 	case 7:
 		ConstructMaterialsUI();
 		break;
+
+	case 8:
+		ConstructShadowUI();
+		break;
 	}
 
 	// End the "Inspector" window
@@ -634,15 +704,18 @@ void Game::BuildUI()
 // --------------------------------------------------------
 void Game::UpdateEntities(const float& deltaTime, const float& totalTime)
 {
+	moveTime += deltaTime;
+
 	// Scale the first and last entity
 	float scale = (float)sin(totalTime) * 0.5f + 1.0f;
+	float translate = (float)sin(moveTime) * 2.0f;
 
-	// Rotate and scalle all entities
-	for (int i = 0; i < entities.size(); ++i)
-	{
-		entities[i]->GetTransform()->SetRotation(totalTime, 0, totalTime);
-		entities[i]->GetTransform()->SetScale(scale, scale, scale);
-	}
+	// Rotate and scale all entities
+	entities[0]->GetTransform()->SetPosition(-10.0f, 0.0f, translate);
+	entities[1]->GetTransform()->SetPosition(translate - 5.0f, 0.0f, 0.0f);
+	entities[2]->GetTransform()->SetPosition(0, translate, 0);
+	entities[3]->GetTransform()->SetScale(scale, scale, scale);
+	entities[4]->GetTransform()->SetRotation(totalTime, 0, totalTime);
 }
 
 // --------------------------------------------------------
@@ -677,7 +750,7 @@ void Game::Update(float deltaTime, float totalTime)
 	userInput->Update(deltaTime);
 
 	// Update entities
-	//UpdateEntities(deltaTime, totalTime);
+	UpdateEntities(deltaTime, totalTime);
 
 	// Update renderer
 	gameRenderer->Update(totalTime, entities);
@@ -1073,4 +1146,9 @@ void Game::ConstructMaterialsUI()
 		// Pop the ID
 		ImGui::PopID();
 	}
+}
+
+void Game::ConstructShadowUI()
+{
+	ImGui::Image(gameRenderer->GetShadowSRV().Get(), ImVec2(512, 512));
 }

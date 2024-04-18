@@ -60,31 +60,31 @@ void LightManager::Init()
 	light3.SetType(LIGHT_TYPE_DIRECTIONAL);
 	light3.SetDirection(XMFLOAT3(0.0f, -1.0f, 0.0f));
 	light3.SetColor(XMFLOAT3(1.0f, 1.0f, 1.0f));
-	light3.SetIntensity(0.5f);
+	light3.SetIntensity(1.2f);
 
-	// Create a fourth light
-	Light light4;
-	light4.SetType(LIGHT_TYPE_POINT);
-	light4.SetDirection(XMFLOAT3(0.0f, -1.0f, 0.0f));
-	light4.SetRange(24.0f);
-	light4.SetPosition(XMFLOAT3(0.0f, 10.0f, 0.0f));
-	light4.SetColor(XMFLOAT3(1.0f, 1.0f, 1.0f));
-	light4.SetIntensity(0.7f);
+	//// Create a fourth light
+	//Light light4;
+	//light4.SetType(LIGHT_TYPE_POINT);
+	//light4.SetDirection(XMFLOAT3(0.0f, -1.0f, 0.0f));
+	//light4.SetRange(24.0f);
+	//light4.SetPosition(XMFLOAT3(0.0f, 10.0f, 0.0f));
+	//light4.SetColor(XMFLOAT3(1.0f, 1.0f, 1.0f));
+	//light4.SetIntensity(0.7f);
 
-	Light light5;
-	light5.SetType(LIGHT_TYPE_POINT);
-	light5.SetDirection(XMFLOAT3(0.5f, 0.5f, 0.0f));
-	light5.SetRange(10.0f);
-	light5.SetPosition(XMFLOAT3(-3.5f, -3.5f, 0.0f));
-	light5.SetColor(XMFLOAT3(1.0f, 1.0f, 1.0f));
-	light5.SetIntensity(0.7f);
+	//Light light5;
+	//light5.SetType(LIGHT_TYPE_POINT);
+	//light5.SetDirection(XMFLOAT3(0.5f, 0.5f, 0.0f));
+	//light5.SetRange(10.0f);
+	//light5.SetPosition(XMFLOAT3(-3.5f, -3.5f, 0.0f));
+	//light5.SetColor(XMFLOAT3(1.0f, 1.0f, 1.0f));
+	//light5.SetIntensity(0.7f);
 
 	// Add the lights
 	lights.push_back(light1);
 	lights.push_back(light2);
 	lights.push_back(light3);
-	lights.push_back(light4);
-	lights.push_back(light5);
+	/*lights.push_back(light4);
+	lights.push_back(light5);*/
 
 	// Add datas, making sure that indices match up
 	for (int i = 0; i < lights.size(); ++i)

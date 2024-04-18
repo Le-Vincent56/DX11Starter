@@ -50,6 +50,7 @@ private:
 	void ConstructCameraUI();
 	void ConstructLightUI();
 	void ConstructMaterialsUI();
+	void ConstructShadowUI();
 
 	// Camera
 	std::vector<std::shared_ptr<Camera>> cameras;
@@ -70,6 +71,7 @@ private:
 
 	// Entities
 	std::vector<std::shared_ptr<GameEntity>> entities;
+	float moveTime;
 
 	// User input
 	std::shared_ptr<UserInput> userInput;
