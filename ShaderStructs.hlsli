@@ -7,6 +7,7 @@ struct VertexShaderInput
     float3 normal : NORMAL; // Normal
     float3 tangent : TANGENT;
     float2 uv : TEXCOORD; // UV coordinates
+    float4 shadowMapPos : SHADOW_POSITION; // Shadow map position
 };
 
 struct VertexToPixel
@@ -16,6 +17,7 @@ struct VertexToPixel
     float3 normal : NORMAL; // Normals
     float3 tangent : TANGENT;
     float3 worldPosition : POSITION; // World position
+    float4 shadowMapPos : SHADOW_POSITION; // Shadow map position
 };
 
 struct VertexToPixel_Sky

@@ -4,6 +4,9 @@ cbuffer EntityData : register(b0)
 {
 	matrix world;
 	matrix worldInvTranspose;
+	
+    matrix lightView;
+    matrix lightProjection;
 }
 
 cbuffer FrameData : register(b1)
@@ -28,6 +31,9 @@ VertexToPixel main(VertexShaderInput input)
 	
 	// Set world position
 	output.worldPosition = mul(world, float4(input.localPosition, 1)).xyz;
+	
+    matrix shadowWVP = mul(lightProjection, mul(lightView, world));
+    output.shadowMapPos = mul(shadowWVP, float4(input.localPosition, 1.0f));
 	
 	return output;
 }

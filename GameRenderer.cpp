@@ -172,10 +172,29 @@ void GameRenderer::InitShadows()
 		shadowSRV.GetAddressOf()
 	);
 
+	// Create shadow rasterizer
+	D3D11_RASTERIZER_DESC shadowRastDesc = {};
+	shadowRastDesc.FillMode = D3D11_FILL_SOLID;
+	shadowRastDesc.CullMode = D3D11_CULL_BACK;
+	shadowRastDesc.DepthClipEnable = true;
+	shadowRastDesc.DepthBias = 1000;
+	shadowRastDesc.SlopeScaledDepthBias = 1.0f;
+	device->CreateRasterizerState(&shadowRastDesc, &shadowRasterizer);
+
+	// Create shadow sampler
+	D3D11_SAMPLER_DESC shadowSampDesc = {};
+	shadowSampDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+	shadowSampDesc.ComparisonFunc = D3D11_COMPARISON_LESS;
+	shadowSampDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+	shadowSampDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+	shadowSampDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+	shadowSampDesc.BorderColor[0] = 1.0f;
+	device->CreateSamplerState(&shadowSampDesc, &shadowSampler);
+
 	// Create light view maxtix
-	XMVECTOR lightDirection = XMVectorSet(0.0f, -1.0f, 0.0f, 0.0f);
+	XMVECTOR lightDirection = XMVectorSet(1.0f, -1.0f, 0.0f, 0.0f);
 	XMMATRIX lightView = XMMatrixLookToLH(
-		-lightDirection * 1,
+		-lightDirection * 10,
 		lightDirection,
 		XMVectorSet(0, 1, 0, 0)
 	);
@@ -237,6 +256,9 @@ void GameRenderer::Update(float& totalTime, std::vector<std::shared_ptr<GameEnti
 
 void GameRenderer::RenderShadows()
 {
+	// Set shadow rasterizer state
+	context->RSSetState(shadowRasterizer.Get());
+
 	// Clear the shader buffer
 	context->ClearDepthStencilView(shadowDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
@@ -271,9 +293,10 @@ void GameRenderer::RenderShadows()
 	}
 
 	// Reset pipeline
-	viewport.Width = (float)this->windowHeight;
+	viewport.Width = (float)this->windowWidth;
 	viewport.Height = (float)this->windowHeight;
 	context->RSSetViewports(1, &viewport);
+	context->RSSetState(0);
 	context->OMSetRenderTargets(
 		1,
 		backBufferRTV.GetAddressOf(),
@@ -298,6 +321,7 @@ void GameRenderer::Draw(bool vsync, bool deviceSupportsTearing, BOOL isFullscree
 		context->ClearDepthStencilView(depthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
+	// Render shadows
 	RenderShadows();
 
 	// Set pixel shader frame data
@@ -314,6 +338,12 @@ void GameRenderer::Draw(bool vsync, bool deviceSupportsTearing, BOOL isFullscree
 	{
 		// Send light data
 		lightManager->SetPixelData();
+
+		// Set shadow data
+		vertexShader->SetMatrix4x4("lightView", lightViewMatrix);
+		vertexShader->SetMatrix4x4("lightProjection", lightProjectionMatrix);
+		pixelShader->SetShaderResourceView("ShadowMap", shadowSRV);
+		pixelShader->SetSamplerState("ShadowSampler", shadowSampler);
 		
 		// Prepare the material's shader data
 		renderEntities[i]->GetMaterial()->PrepareMaterial(
@@ -337,6 +367,10 @@ void GameRenderer::Draw(bool vsync, bool deviceSupportsTearing, BOOL isFullscree
 	// - These should happen exactly ONCE PER FRAME
 	// - At the very end of the frame (after drawing *everything*)
 	{
+		// Unbind the shadow map
+		ID3D11ShaderResourceView* nullSRVs[128] = {};
+		context->PSSetShaderResources(0, 128, nullSRVs);
+
 		// Present the back buffer to the user
 		//  - Puts the results of what we've drawn onto the window
 		//  - Without this, the user never sees anything
