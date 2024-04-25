@@ -43,6 +43,15 @@ private:
 	DirectX::XMFLOAT4X4 lightViewMatrix;
 	DirectX::XMFLOAT4X4 lightProjectionMatrix;
 
+	// Post processing
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> ppSampler;
+	std::shared_ptr<SimpleVertexShader> ppVS;
+
+	// Blur
+	std::shared_ptr<SimplePixelShader> blurPS;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> blurRTV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> blurSRV;
+
 	// Variables
 	float bgColor[4] = { 0.376f, 0.667f, 0.8f, 1.0f };
 	float totalTime = 0;
@@ -77,11 +86,14 @@ public:
 	void LoadShaders();
 	void CreateSkybox(Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler, std::shared_ptr<Mesh> skyMesh);
 	void InitShadows();
+	void InitPostProcessing();
 
 	// Update Functions
 	void SelectRenderableEntities(std::vector<std::shared_ptr<GameEntity>>& gameEntities);
 	void Update(float& totalTime, std::vector<std::shared_ptr<GameEntity>>& gameEntities);
 	void RenderShadows();
+	void RenderPostProcessing(int blurRadius);
+	void Blur(int blurRadius);
 
 	// Draw Functions
 	void Draw(bool vsync, bool deviceSupportsTearing, BOOL isFullscreen, 
