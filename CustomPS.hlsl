@@ -17,7 +17,7 @@ cbuffer EntityData : register(b0)
     float time;
     float offset;
     float scale;
-    Light lights[5];
+    Light lights[3];
 }
 
 cbuffer FrameData : register(b1)
@@ -79,7 +79,7 @@ float4 main(VertexToPixel input) : SV_TARGET
     float3 specularColor = lerp(F0_NON_METAL, surfaceColor.rgb, metalness);
 
     // Get the total color
-    float3 totalColor = surfaceColor;
+    float3 totalColor = 0;
 
     // Normalize lighting
     for (int i = 0; i < 3; i++)

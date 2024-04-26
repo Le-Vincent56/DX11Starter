@@ -51,7 +51,7 @@ void LightManager::Init()
 	// Create the second light
 	Light light2;
 	light2.SetType(LIGHT_TYPE_DIRECTIONAL);
-	light2.SetDirection(XMFLOAT3(-1.0f, 0.0f, 0.0f));
+	light2.SetDirection(XMFLOAT3(-1.0f, 1.0f, 0.0f));
 	light2.SetColor(XMFLOAT3(1.0f, 1.0f, 1.0f));
 	light2.SetIntensity(0.6f);
 

@@ -1,12 +1,8 @@
-struct VertexToPixel
-{
-	float4 position : SV_POSITION;
-	float2 uv : TEXCOORD0;
-};
+#include "ShaderStructs.hlsli"
 
-VertexToPixel main(uint id : SV_VertexID)
+VertexToPixel_PP main(uint id : SV_VertexID)
 {
-	VertexToPixel output;
+	VertexToPixel_PP output;
 
 	// Calculate the UV (0, 0) to (2, 2) using the ID
 	output.uv = float2(

@@ -46,11 +46,21 @@ private:
 	// Post processing
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> ppSampler;
 	std::shared_ptr<SimpleVertexShader> ppVS;
+	std::shared_ptr<SimplePixelShader> ppPS;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> ppRTV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ppSRV;
 
 	// Blur
 	std::shared_ptr<SimplePixelShader> blurPS;
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> blurRTV;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> blurSRV;
+	int blurRadius = 1;
+
+	// Pixelate
+	std::shared_ptr<SimplePixelShader> pixelatePS;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> pixelateRTV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> pixelateSRV;
+	int pixelSize = 5;
 
 	// Variables
 	float bgColor[4] = { 0.376f, 0.667f, 0.8f, 1.0f };
@@ -75,11 +85,17 @@ public:
 
 	// Getters
 	float* GetBGColor();
+	int GetBlurRadius() const;
+	int GetPixelSize() const;
 	std::shared_ptr<SimplePixelShader> GetPixelShader();
 	std::shared_ptr<SimpleVertexShader> GetVertexShader();
 	std::vector<std::shared_ptr<GameEntity>> GetRenderedEntities();
 	std::shared_ptr<LightManager> GetLightManager();
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetShadowSRV();
+
+	// Setters
+	void SetBlurRadius(int blurRadius);
+	void SetPixelSize(int pixelSize);
 
 	// Initialize Functions
 	void Init();
@@ -87,13 +103,18 @@ public:
 	void CreateSkybox(Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler, std::shared_ptr<Mesh> skyMesh);
 	void InitShadows();
 	void InitPostProcessing();
+	void ResizePostProcess(
+		Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv,
+		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& srv
+	);
 
 	// Update Functions
 	void SelectRenderableEntities(std::vector<std::shared_ptr<GameEntity>>& gameEntities);
 	void Update(float& totalTime, std::vector<std::shared_ptr<GameEntity>>& gameEntities);
 	void RenderShadows();
-	void RenderPostProcessing(int blurRadius);
-	void Blur(int blurRadius);
+	void RenderPostProcessing();
+	void Blur();
+	void Pixelate();
 
 	// Draw Functions
 	void Draw(bool vsync, bool deviceSupportsTearing, BOOL isFullscreen, 

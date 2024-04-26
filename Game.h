@@ -51,6 +51,7 @@ private:
 	void ConstructLightUI();
 	void ConstructMaterialsUI();
 	void ConstructShadowUI();
+	void ConstructPostProcessUI();
 
 	// Camera
 	std::vector<std::shared_ptr<Camera>> cameras;

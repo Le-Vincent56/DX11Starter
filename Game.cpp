@@ -646,6 +646,10 @@ void Game::BuildUI()
 		ImGui::SameLine();
 		if (ImGui::Button("Shadows"))
 			currentTab = 8;
+
+		ImGui::SameLine();
+		if (ImGui::Button("Post Processing"))
+			currentTab = 9;
 	}
 
 	// Create a small separator
@@ -653,7 +657,7 @@ void Game::BuildUI()
 
 	switch (currentTab)
 	{
-	// General Tab
+	// General tab
 	case 0:
 		ConstructGeneralUI();
 		break;
@@ -678,20 +682,29 @@ void Game::BuildUI()
 		ConstructEntitiesUI();
 		break;
 
+	// Camera tab
 	case 5:
 		ConstructCameraUI();
 		break;
 
+	// Lights tab
 	case 6:
 		ConstructLightUI();
 		break;
 
+	// Materials tab
 	case 7:
 		ConstructMaterialsUI();
 		break;
 
+	// Shadows tab
 	case 8:
 		ConstructShadowUI();
+		break;
+
+	// Post-Processing tab
+	case 9:
+		ConstructPostProcessUI();
 		break;
 	}
 
@@ -1151,4 +1164,18 @@ void Game::ConstructMaterialsUI()
 void Game::ConstructShadowUI()
 {
 	ImGui::Image(gameRenderer->GetShadowSRV().Get(), ImVec2(512, 512));
+}
+
+void Game::ConstructPostProcessUI()
+{
+	// Get post processing variables
+	int blurRadius = gameRenderer->GetBlurRadius();
+	int pixelSize = gameRenderer->GetPixelSize();
+
+	// Set the blur radius
+	if (ImGui::SliderInt("Blur Radius", &blurRadius, 0, 10))
+		gameRenderer->SetBlurRadius(blurRadius);
+
+	if (ImGui::SliderInt("Pixel Size", &pixelSize, 1, 10))
+		gameRenderer->SetPixelSize(pixelSize);
 }

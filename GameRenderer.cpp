@@ -44,6 +44,16 @@ float* GameRenderer::GetBGColor()
 	return this->bgColor;
 }
 
+int GameRenderer::GetBlurRadius() const
+{
+	return this->blurRadius;
+}
+
+int GameRenderer::GetPixelSize() const
+{
+	return this->pixelSize;
+}
+
 std::shared_ptr<SimplePixelShader> GameRenderer::GetPixelShader()
 {
 	return this->pixelShader;
@@ -69,6 +79,16 @@ Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GameRenderer::GetShadowSRV()
 	return this->shadowSRV;
 }
 
+void GameRenderer::SetBlurRadius(int blurRadius)
+{
+	this->blurRadius = blurRadius;
+}
+
+void GameRenderer::SetPixelSize(int pixelSize)
+{
+	this->pixelSize = pixelSize;
+}
+
 // --------------------------------------------------------
 // Handle Renderer intialization
 // --------------------------------------------------------
@@ -86,8 +106,6 @@ void GameRenderer::Init()
 	// Initialize post process
 	InitPostProcessing();
 }
-
-
 
 // --------------------------------------------------------
 // Loads shaders from compiled shader object (.cso) files
@@ -123,10 +141,22 @@ void GameRenderer::LoadShaders()
 		FixPath(L"FullscreenVS.cso").c_str()
 	);
 
+	ppPS = std::make_shared<SimplePixelShader>(
+		device,
+		context,
+		FixPath(L"PostProcessPixelShader.cso").c_str()
+	);
+
 	blurPS = std::make_shared<SimplePixelShader>(
 		device,
 		context,
 		FixPath(L"BlurPixelShader.cso").c_str()
+	);
+
+	pixelatePS = std::make_shared<SimplePixelShader>(
+		device,
+		context,
+		FixPath(L"PixelatePixelShader.cso").c_str()
 	);
 }
 
@@ -209,7 +239,7 @@ void GameRenderer::InitShadows()
 	// Create light view maxtix
 	XMVECTOR lightDirection = XMVectorSet(1.0f, -1.0f, 0.0f, 0.0f);
 	XMMATRIX lightView = XMMatrixLookToLH(
-		-lightDirection * 10,
+		-lightDirection * 3,
 		lightDirection,
 		XMVectorSet(0, 1, 0, 0)
 	);
@@ -237,6 +267,19 @@ void GameRenderer::InitPostProcessing()
 	ppSampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	device->CreateSamplerState(&ppSampDesc, ppSampler.GetAddressOf());
 
+	ResizePostProcess(ppRTV, ppSRV);
+	ResizePostProcess(blurRTV, blurSRV);
+	ResizePostProcess(pixelateRTV, pixelateSRV);
+}
+
+void GameRenderer::ResizePostProcess(
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv, 
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& srv)
+{
+	// Reset the resources
+	rtv.Reset();
+	srv.Reset();
+
 	// Create the texture for the render target
 	D3D11_TEXTURE2D_DESC textureDesc = {};
 	textureDesc.Width = this->windowWidth;
@@ -251,9 +294,8 @@ void GameRenderer::InitPostProcessing()
 	textureDesc.SampleDesc.Quality = 0;
 	textureDesc.Usage = D3D11_USAGE_DEFAULT;
 
-	// Create the texture
-	Microsoft::WRL::ComPtr<ID3D11Texture2D> blurTexture;
-	device->CreateTexture2D(&textureDesc, 0, blurTexture.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> postProcessTexture;
+	device->CreateTexture2D(&textureDesc, 0, postProcessTexture.GetAddressOf());
 
 	// Create the Render Target View
 	D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};
@@ -261,16 +303,16 @@ void GameRenderer::InitPostProcessing()
 	rtvDesc.Texture2D.MipSlice = 0;
 	rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 	device->CreateRenderTargetView(
-		blurTexture.Get(),
+		postProcessTexture.Get(),
 		&rtvDesc,
-		blurRTV.ReleaseAndGetAddressOf()
+		rtv.ReleaseAndGetAddressOf()
 	);
 
 	// Create the Shader Resource View
 	device->CreateShaderResourceView(
-		blurTexture.Get(),
+		postProcessTexture.Get(),
 		0,
-		blurSRV.ReleaseAndGetAddressOf()
+		srv.ReleaseAndGetAddressOf()
 	);
 }
 
@@ -367,37 +409,50 @@ void GameRenderer::RenderShadows()
 	);
 }
 
-void GameRenderer::RenderPostProcessing(int blurRadius)
+void GameRenderer::RenderPostProcessing()
 {
-	UINT stride = sizeof(Vertex);
-	UINT offset = 0;
-	ID3D11Buffer* nothing = 0;
-	context->IASetIndexBuffer(0, DXGI_FORMAT_R32_UINT, 0);
-	context->IASetVertexBuffers(0, 1, &nothing, &stride, &offset);
-
 	// Activate  the vertex shader
 	ppVS->SetShader();
 	
-	Blur(blurRadius);
+	Blur();
+	Pixelate();
 }
 
-void GameRenderer::Blur(int blurRadius)
+void GameRenderer::Blur()
+{
+	// Set the render target view
+	context->OMSetRenderTargets(1, blurRTV.GetAddressOf(), 0);
+
+	// Set the shader and bind resources
+	blurPS->SetShader();
+	blurPS->SetShaderResourceView("Pixels", ppSRV.Get());
+	blurPS->SetSamplerState("ClampSampler", ppSampler.Get());
+
+	// Set cbuffer data
+	blurPS->SetInt("blurRadius", this->blurRadius);
+	blurPS->SetFloat("pixelWidth", 1.0f/(float)this->windowWidth);
+	blurPS->SetFloat("pixelHeight", 1.0f/(float)this->windowHeight);
+	blurPS->CopyAllBufferData();
+
+	context->Draw(3, 0);
+}
+
+void GameRenderer::Pixelate()
 {
 	// Restore the back buffer
 	context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), 0);
 
 	// Set the shader and bind resources
-	blurPS->SetShader();
-	blurPS->SetShaderResourceView("Pixels", blurSRV.Get());
-	blurPS->SetSamplerState("ClampSampler", ppSampler.Get());
+	pixelatePS->SetShader();
+	pixelatePS->SetShaderResourceView("Pixels", blurSRV.Get());
+	pixelatePS->SetSamplerState("ClampSampler", ppSampler.Get());
 
 	// Set cbuffer data
-	blurPS->SetInt("blurRadius", blurRadius);
-	blurPS->SetFloat("pixelWidth", 1.0f/(float)this->windowWidth);
-	blurPS->SetFloat("pixelHeight", 1.0f/(float)this->windowHeight);
-	blurPS->CopyAllBufferData();
+	pixelatePS->SetFloat("pixelSize", (float)this->pixelSize);
+	pixelatePS->SetFloat2("textureSize", DirectX::XMFLOAT2((float)this->windowWidth, (float)this->windowHeight));
+	pixelatePS->CopyAllBufferData();
 
-	//context->Draw(3, 0);
+	context->Draw(3, 0);
 }
 
 // --------------------------------------------------------
@@ -418,19 +473,21 @@ void GameRenderer::Draw(bool vsync, bool deviceSupportsTearing, BOOL isFullscree
 
 		// Clear the post-processing render targets
 		const float clearColor[4] = {
-			0.0f,
-			0.0f,
-			0.0f,
+			1.0f,
+			1.0f,
+			1.0f,
 			1.0f
 		};
+		context->ClearRenderTargetView(ppRTV.Get(), clearColor);
 		context->ClearRenderTargetView(blurRTV.Get(), clearColor);
+		context->ClearRenderTargetView(pixelateRTV.Get(), clearColor);
+
+		// Render shadows
+		RenderShadows();
 
 		// Swap the active render target
-		context->OMSetRenderTargets(1, blurRTV.GetAddressOf(), depthBufferDSV.Get());
+		context->OMSetRenderTargets(1, ppRTV.GetAddressOf(), depthBufferDSV.Get());
 	}
-
-	// Render shadows
-	RenderShadows();
 
 	// Set pixel shader frame data
 	pixelShader->SetFloat3("cameraPos", camera->GetTransform()->GetPosition());
@@ -468,7 +525,7 @@ void GameRenderer::Draw(bool vsync, bool deviceSupportsTearing, BOOL isFullscree
 	skybox->Draw(camera);
 
 	// Render post processing
-	RenderPostProcessing(3);
+	RenderPostProcessing();
 
 	// Unbind the shadow map
 	ID3D11ShaderResourceView* nullSRVs[128] = {};
